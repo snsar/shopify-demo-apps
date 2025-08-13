@@ -1,0 +1,19 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "5c3d908fdc455758b57b469d0d4f9295"
+name = "study-apps"
+handle = "study-apps"
+application_url = "https://b2b.quotesnap.local"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+
+[webhooks]
+api_version = "2025-07"
+
+[auth]
+redirect_urls = ["https://b2b.quotesnap.local/api/auth/callback"]
+
+[pos]
+embedded = false
