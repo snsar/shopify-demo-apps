@@ -5,11 +5,15 @@ namespace App\Lib;
 use Illuminate\Support\Facades\Cookie;
 use Shopify\Context;
 use Shopify\Auth\OAuthCookie;
+use Illuminate\Support\Facades\Log;
 
 class CookieHandler
 {
     public static function saveShopifyCookie(OAuthCookie $cookie)
     {
+        Log::info("[CookieHandler] Saving cookie: " . $cookie->getName());
+        Log::info("[CookieHandler] Cookie: " . json_encode($cookie));
+
         Cookie::queue(
             $cookie->getName(),
             $cookie->getValue(),

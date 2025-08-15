@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Shopify\Auth\OAuth;
 use Shopify\Context;
 use Shopify\Utils;
+use Illuminate\Support\Facades\Log;
 
 class AuthRedirection
 {
@@ -20,6 +21,7 @@ class AuthRedirection
             $redirectUrl = self::serverSideRedirectUrl($shop, $isOnline);
         }
 
+        Log::info("[AuthRedirection] Redirecting to: " . $redirectUrl);
         return redirect($redirectUrl);
     }
 

@@ -13,7 +13,7 @@ include_config_on_deploy = true
 api_version = "2025-07"
 
 [auth]
-redirect_urls = ["https://b2b.quotesnap.local/api/auth/callback"]
+redirect_urls = ["https://b2b.quotesnap.local/api/auth/callback", "https://b2b.quotesnap.local/"]
 
 [pos]
 embedded = false
