@@ -13,15 +13,20 @@ class AuthRedirection
 {
     public static function redirect(Request $request, bool $isOnline = false): RedirectResponse
     {
+        Log::info("[AuthRedirection] request all:" . json_encode($request->all()));
         $shop = Utils::sanitizeShopDomain($request->query("shop"));
-
+        Log::info("[AuthRedirection] shop: " . json_encode($shop));
+        Log::info("[AuthRedirection] isEmbeddedApp: " . json_encode(Context::$IS_EMBEDDED_APP));
+        Log::info("[AuthRedirection] embedded: " . json_encode($request->query("embedded", false)));
         if (Context::$IS_EMBEDDED_APP && $request->query("embedded", false) === "1") {
             $redirectUrl = self::clientSideRedirectUrl($shop, $request->query());
+            Log::info("[AuthRedirection] redirectUrl: " . json_encode($redirectUrl));
         } else {
             $redirectUrl = self::serverSideRedirectUrl($shop, $isOnline);
+            Log::info("[AuthRedirection] redirectUrl: " . json_encode($redirectUrl));
         }
 
-        Log::info("[AuthRedirection] Redirecting to: " . $redirectUrl);
+        Log::info("[AuthRedirection] redirecting to: " . $redirectUrl);
         return redirect($redirectUrl);
     }
 
