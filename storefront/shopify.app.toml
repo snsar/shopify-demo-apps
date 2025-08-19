@@ -3,7 +3,7 @@
 client_id = "5c3d908fdc455758b57b469d0d4f9295"
 name = "study-apps"
 handle = "study-apps"
-application_url = "https://b2b.quotesnap.local"
+application_url = "https://b2b.quotesnap.local/frontend/"
 embedded = true
 
 [build]
