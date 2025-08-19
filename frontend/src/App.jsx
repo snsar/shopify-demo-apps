@@ -1,5 +1,7 @@
 import { useAppBridge } from '@shopify/app-bridge-react'
 import { Page, Layout, Card, Button, Text } from '@shopify/polaris'
+import AccountConnectionExample from './components/AccountConnectionExample'
+
 
 function App() {
   const shopify = useAppBridge()
@@ -13,6 +15,7 @@ function App() {
     <Page title="My Shopify App">
       <Layout>
         <Layout.Section>
+          <AccountConnectionExample />
           <Card sectioned>
             <Text as="h2" variant="headingMd">
               Welcome to your Shopify App! 🎉
