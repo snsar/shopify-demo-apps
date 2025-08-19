@@ -15,37 +15,52 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Đăng ký TokenValidationService
+        $this->app->singleton(\App\Services\TokenValidationService::class, function ($app) {
+            return new \App\Services\TokenValidationService();
+        });
+
+        // Đăng ký ShopifyService
+        $this->app->singleton(\App\Services\ShopifyService::class, function ($app) {
+            return new \App\Services\ShopifyService(
+                config('shopify.api_key', ''),
+                config('shopify.api_secret', ''),
+                config('shopify.scopes', ''),
+                config('shopify.redirect_uri', ''),
+                config('shopify.host_name', '')
+            );
+        });
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void {
-            $host = str_replace('https://', '', env('HOST', 'not_defined'));
-    
-            $customDomain = env('SHOP_CUSTOM_DOMAIN', null);
-            Context::initialize(
-                env('SHOPIFY_API_KEY', 'not_defined'),
-                env('SHOPIFY_API_SECRET', 'not_defined'),
-                env('SCOPES', 'not_defined'),
-                $host,
-                new DbSessionStorage(),
-                ApiVersion::LATEST,
-                true,
-                false,
-                null,
-                '',
-                null,
-                (array)$customDomain,
-            );
-    
-            URL::forceRootUrl("https://$host");
-            URL::forceScheme('https');
-    
-            // Registry::addHandler(Topics::APP_UNINSTALLED, new AppUninstalled());
-    
-            /*
+    public function boot(): void
+    {
+        $host = str_replace('https://', '', env('HOST', 'not_defined'));
+
+        $customDomain = env('SHOP_CUSTOM_DOMAIN', null);
+        Context::initialize(
+            env('SHOPIFY_API_KEY', 'not_defined'),
+            env('SHOPIFY_API_SECRET', 'not_defined'),
+            env('SCOPES', 'not_defined'),
+            $host,
+            new DbSessionStorage(),
+            ApiVersion::LATEST,
+            true,
+            false,
+            null,
+            '',
+            null,
+            (array)$customDomain,
+        );
+
+        URL::forceRootUrl("https://$host");
+        URL::forceScheme('https');
+
+        // Registry::addHandler(Topics::APP_UNINSTALLED, new AppUninstalled());
+
+        /*
              * This sets up the mandatory privacy webhooks. You’ll need to fill in the endpoint to be used by your app in
              * the “Privacy webhooks” section in the “App setup” tab, and customize the code when you store customer data
              * in the handlers being registered below.
@@ -55,9 +70,9 @@ class AppServiceProvider extends ServiceProvider
              *
              * Note that you'll only receive these webhooks if your app has the relevant scopes as detailed in the docs.
              */
-            // Registry::addHandler('CUSTOMERS_DATA_REQUEST', new CustomersDataRequest());
-            // Registry::addHandler('CUSTOMERS_REDACT', new CustomersRedact());
-            // Registry::addHandler('SHOP_REDACT', new ShopRedact());
-    
+        // Registry::addHandler('CUSTOMERS_DATA_REQUEST', new CustomersDataRequest());
+        // Registry::addHandler('CUSTOMERS_REDACT', new CustomersRedact());
+        // Registry::addHandler('SHOP_REDACT', new ShopRedact());
+
     }
 }
