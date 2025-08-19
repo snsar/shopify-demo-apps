@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use App\Models\Session;
 
 class AuthController extends Controller
 {
@@ -36,16 +37,34 @@ class AuthController extends Controller
         ]);
         Log::info("[Auth callback] " . json_encode($response));
         $data = $response->json();
-        // Log::info("[Auth callback] " . json_encode($data));
 
-        // Lưu shop + access token offline vào DB
-        // Shop::updateOrCreate([...], ['token' => $data['access_token']]);
+        if (!$response->successful() || !isset($data['access_token'])) {
+            Log::error("[Auth callback] Failed to get access token", ['response' => $data]);
+            abort(500, 'Failed to get access token from Shopify');
+        }
+
+        // Lưu session vào database
+        $sessionId = 'offline_' . $request->shop;
+        $session = Session::updateOrCreate(
+            [
+                'session_id' => $sessionId,
+            ],
+            [
+                'shop' => $request->shop,
+                'is_online' => false, // offline token
+                'state' => $request->state ?? '',
+                'scope' => $data['scope'] ?? null,
+                'access_token' => $data['access_token'],
+                'expires_at' => null, // offline token không hết hạn
+            ]
+        );
+
+        Log::info("[Auth callback] Session saved", ['session_id' => $session->id]);
 
         return response()->json([
-            'message' => 'App installed!',
-            'token'   => $data,
+            'message' => 'App installed successfully!',
+            'shop' => $request->shop,
+            'session_id' => $session->session_id,
         ]);
     }
-
-    
 }
