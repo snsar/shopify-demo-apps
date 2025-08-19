@@ -9,29 +9,6 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function auth(Request $request)
-    {
-        $shop = $this->sanitizeShop($request->query('shop'));
-
-        if (!$shop) {
-            return response()->json(['error' => 'Shop parameter is required'], 400);
-        }
-
-        // Tạo state parameter để bảo mật (ngăn CSRF attacks)
-        $state = Str::random(32);
-
-        // Lưu state vào cookie để verify sau
-        Cookie::queue('oauth_state', $state, 10); // 10 minutes
-        Cookie::queue('oauth_shop', $shop, 10);
-
-        // Tạo authorization URL
-        $authUrl = $this->buildAuthUrl($shop, $state);
-
-        Log::info("[Custom Auth] Redirecting to: $authUrl");
-
-        return redirect($authUrl);
-    }
-
     public function callback(Request $request)
     {
 
@@ -70,17 +47,5 @@ class AuthController extends Controller
         ]);
     }
 
-    public function buildAuthUrl(string $shop, string $state): string
-    {
-        $params = [
-            'client_id' => env('SHOPIFY_API_KEY'),
-            'scope' => env('SHOPIFY_SCOPES'),
-            'redirect_uri' => env('SHOPIFY_REDIRECT_URI'),
-            'state' => $state,
-            'grant_options[]' => 'offline',
-        ];
-
-        $query = http_build_query($params);
-        return "https://{$shop}/admin/oauth/authorize?{$query}";
-    }
+    
 }
