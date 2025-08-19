@@ -16,6 +16,7 @@ use App\Lib\EnsureBilling;
 use App\Http\Controllers\AuthController;
 use App\Services\ShopifyService;
 use App\Services\TokenValidationService;
+use App\Http\Controllers\ShopifyWebhookController;
 
 // Routes không cần xác thực
 Route::get('/webhook', function (Request $request) {
@@ -219,3 +220,6 @@ Route::middleware(['validate.shopify.token:online'])->group(function () {
         ]);
     });
 });
+
+
+Route::post('/webhook/uninstalled', [ShopifyWebhookController::class, 'handleUninstalled']);
