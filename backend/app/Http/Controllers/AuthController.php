@@ -60,11 +60,19 @@ class AuthController extends Controller
         );
 
         Log::info("[Auth callback] Session saved", ['session_id' => $session->id]);
+        
+        $host = $request->query("host");
 
-        return response()->json([
-            'message' => 'App installed successfully!',
-            'shop' => $request->shop,
-            'session_id' => $session->session_id,
-        ]);
+        $decodedHost = base64_decode($host);
+        $apiKey = env('SHOPIFY_API_KEY');
+        $redirectUrl = "https://$decodedHost/apps/$apiKey";
+
+        return redirect($redirectUrl);
+
+        // return response()->json([
+        //     'message' => 'App installed successfully!',
+        //     'shop' => $request->shop,
+        //     'session_id' => $session->session_id,
+        // ]);
     }
 }
