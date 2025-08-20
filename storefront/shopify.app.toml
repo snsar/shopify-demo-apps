@@ -12,8 +12,21 @@ include_config_on_deploy = true
 [webhooks]
 api_version = "2025-07"
 
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "https://de2e6b5d8ece.ngrok-free.app/api/webhooks/app-uninstalled"
+
+[[webhooks.subscriptions]]
+topics = ["orders/create"]
+uri = "https://de2e6b5d8ece.ngrok-free.app/api/webhooks/orders-create"
+
+
+
 [auth]
 redirect_urls = ["https://b2b.quotesnap.local/api/auth/callback"]
 
 [pos]
 embedded = false
+
+[access_scopes]
+scopes = "read_orders"

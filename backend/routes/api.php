@@ -18,6 +18,7 @@ use App\Services\ShopifyService;
 use App\Services\TokenValidationService;
 use App\Http\Controllers\ShopifyWebhookController;
 use App\Http\Controllers\ShopifyImportController;
+use App\Models\Order;
 
 // Routes không cần xác thực
 Route::get('/webhook', function (Request $request) {
@@ -190,6 +191,56 @@ Route::middleware(['validate.shopify.token'])->group(function () {
         Route::delete('/clear', [ShopifyImportController::class, 'clearData']);
     });
 
+    // Orders Routes - xem orders đã được lưu từ webhook
+    Route::prefix('orders')->group(function () {
+        Route::get('/', function (Request $request) {
+            $shop = $request->input('shopify_shop');
+            $perPage = $request->input('per_page', 20);
+
+            $orders = Order::forShop($shop)
+                ->with([])
+                ->orderBy('shopify_created_at', 'desc')
+                ->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $orders
+            ]);
+        });
+
+        Route::get('/{id}', function (Request $request, $id) {
+            $shop = $request->input('shopify_shop');
+
+            $order = Order::forShop($shop)->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $order
+            ]);
+        });
+
+        Route::get('/stats/summary', function (Request $request) {
+            $shop = $request->input('shopify_shop');
+
+            $stats = [
+                'total_orders' => Order::forShop($shop)->count(),
+                'paid_orders' => Order::forShop($shop)->financialStatus('paid')->count(),
+                'pending_orders' => Order::forShop($shop)->financialStatus('pending')->count(),
+                'fulfilled_orders' => Order::forShop($shop)->fulfillmentStatus('fulfilled')->count(),
+                'total_revenue' => Order::forShop($shop)->financialStatus('paid')->sum('total_price'),
+                'recent_orders' => Order::forShop($shop)
+                    ->orderBy('shopify_created_at', 'desc')
+                    ->limit(5)
+                    ->get(['id', 'name', 'total_price', 'currency', 'financial_status', 'shopify_created_at'])
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+        });
+    });
+
     // Force upgrade permissions
     Route::get('/upgrade-permissions', function (Request $request, ShopifyService $shopifyService) {
         $shop = $request->input('shopify_shop');
@@ -245,5 +296,9 @@ Route::middleware(['validate.shopify.token:online'])->group(function () {
     });
 });
 
-
-Route::post('/webhook/uninstalled', [ShopifyWebhookController::class, 'handleUninstalled']);
+// Webhook routes - sử dụng middleware xác thực webhook
+Route::prefix('webhooks')->middleware(['verify.shopify.webhook'])->group(function () {
+    Route::post('/app-uninstalled', [ShopifyWebhookController::class, 'handleUninstalled']);
+    Route::post('/orders-create', [ShopifyWebhookController::class, 'handleOrdersCreate']);
+    // Route::post('/orders/paid', [ShopifyWebhookController::class, 'handleOrdersPaid']);
+});
