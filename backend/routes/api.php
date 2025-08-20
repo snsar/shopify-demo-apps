@@ -17,6 +17,7 @@ use App\Http\Controllers\AuthController;
 use App\Services\ShopifyService;
 use App\Services\TokenValidationService;
 use App\Http\Controllers\ShopifyWebhookController;
+use App\Http\Controllers\ShopifyImportController;
 
 // Routes không cần xác thực
 Route::get('/webhook', function (Request $request) {
@@ -178,6 +179,15 @@ Route::middleware(['validate.shopify.token'])->group(function () {
                 'expires_at' => $session->expires_at,
             ]
         ]);
+    });
+
+    // Shopify Import Routes
+    Route::prefix('import')->group(function () {
+        Route::post('/products', [ShopifyImportController::class, 'importProducts']);
+        Route::post('/draft-orders', [ShopifyImportController::class, 'importDraftOrders']);
+        Route::post('/all', [ShopifyImportController::class, 'importAll']);
+        Route::get('/stats', [ShopifyImportController::class, 'getStats']);
+        Route::delete('/clear', [ShopifyImportController::class, 'clearData']);
     });
 });
 
