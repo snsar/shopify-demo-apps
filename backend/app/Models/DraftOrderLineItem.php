@@ -67,12 +67,12 @@ class DraftOrderLineItem extends Model
                 'draft_order_id' => $draftOrderId,
                 'title' => $shopifyData['title'],
                 'quantity' => $shopifyData['quantity'],
-                'original_unit_price' => $shopifyData['originalUnitPrice'],
-                'discounted_unit_price' => $shopifyData['discountedUnitPrice'],
-                'total_discount' => $shopifyData['totalDiscount'] ?? 0,
-                'weight' => $shopifyData['weight'] ?? null,
-                'requires_shipping' => $shopifyData['requiresShipping'] ?? true,
-                'taxable' => $shopifyData['taxable'] ?? true,
+                'original_unit_price' => 0, // Field không có trong GraphQL response
+                'discounted_unit_price' => 0, // Field không có trong GraphQL response
+                'total_discount' => 0, // Field không có trong GraphQL response
+                'weight' => null, // Field không có trong GraphQL response
+                'requires_shipping' => true, // Field không có trong GraphQL response
+                'taxable' => true, // Field không có trong GraphQL response
                 'sku' => $shopifyData['sku'] ?? null,
                 'vendor' => $shopifyData['vendor'] ?? null,
                 'product_shopify_id' => $shopifyData['product']['id'] ?? null,
@@ -81,9 +81,9 @@ class DraftOrderLineItem extends Model
                 'variant_shopify_id' => $shopifyData['variant']['id'] ?? null,
                 'variant_title' => $shopifyData['variant']['title'] ?? null,
                 'variant_sku' => $shopifyData['variant']['sku'] ?? null,
-                'image_shopify_id' => $shopifyData['image']['id'] ?? null,
-                'image_url' => $shopifyData['image']['url'] ?? null,
-                'image_alt_text' => $shopifyData['image']['altText'] ?? null,
+                'image_shopify_id' => null, // Field không có trong GraphQL response
+                'image_url' => null, // Field không có trong GraphQL response
+                'image_alt_text' => null, // Field không có trong GraphQL response
             ]
         );
 

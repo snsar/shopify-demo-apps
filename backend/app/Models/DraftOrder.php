@@ -86,31 +86,31 @@ class DraftOrder extends Model
                 'name' => $shopifyData['name'],
                 'email' => $shopifyData['email'] ?? null,
                 'phone' => $shopifyData['phone'] ?? null,
-                'note' => $shopifyData['note'] ?? null,
+                'note' => null, // Field không có trong GraphQL response
                 'tags' => $shopifyData['tags'] ?? [],
                 'status' => $shopifyData['status'] ?? 'open',
-                'invoice_url' => $shopifyData['invoiceUrl'] ?? null,
-                'invoice_sent_at' => $shopifyData['invoiceSentAt'] ?? null,
+                'invoice_url' => null, // Field không có trong GraphQL response
+                'invoice_sent_at' => null, // Field không có trong GraphQL response
                 'shopify_created_at' => $shopifyData['createdAt'] ?? null,
                 'shopify_updated_at' => $shopifyData['updatedAt'] ?? null,
-                'completed_at' => $shopifyData['completedAt'] ?? null,
-                'tax_exempt' => $shopifyData['taxExempt'] ?? false,
-                'taxes_included' => $shopifyData['taxesIncluded'] ?? false,
+                'completed_at' => null, // Field không có trong GraphQL response
+                'tax_exempt' => false, // Field không có trong GraphQL response
+                'taxes_included' => false, // Field không có trong GraphQL response
                 'currency_code' => $shopifyData['currencyCode'] ?? 'USD',
                 'total_price' => $shopifyData['totalPrice'] ?? 0,
                 'subtotal_price' => $shopifyData['subtotalPrice'] ?? 0,
                 'total_tax' => $shopifyData['totalTax'] ?? 0,
-                'total_shipping_price' => $shopifyData['totalShippingPrice'] ?? 0,
+                'total_shipping_price' => 0, // Field không có trong GraphQL response
                 'customer_shopify_id' => $shopifyData['customer']['id'] ?? null,
                 'customer_email' => $shopifyData['customer']['email'] ?? null,
                 'customer_first_name' => $shopifyData['customer']['firstName'] ?? null,
                 'customer_last_name' => $shopifyData['customer']['lastName'] ?? null,
                 'customer_phone' => $shopifyData['customer']['phone'] ?? null,
-                'customer_display_name' => $shopifyData['customer']['displayName'] ?? null,
-                'shipping_address' => $shopifyData['shippingAddress'] ?? null,
-                'billing_address' => $shopifyData['billingAddress'] ?? null,
-                'applied_discount' => $shopifyData['appliedDiscount'] ?? null,
-                'shipping_line' => $shopifyData['shippingLine'] ?? null,
+                'customer_display_name' => null, // Field không có trong GraphQL response
+                'shipping_address' => null, // Field không có trong GraphQL response
+                'billing_address' => null, // Field không có trong GraphQL response
+                'applied_discount' => null, // Field không có trong GraphQL response
+                'shipping_line' => null, // Field không có trong GraphQL response
             ]
         );
 

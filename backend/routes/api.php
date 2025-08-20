@@ -189,6 +189,20 @@ Route::middleware(['validate.shopify.token'])->group(function () {
         Route::get('/stats', [ShopifyImportController::class, 'getStats']);
         Route::delete('/clear', [ShopifyImportController::class, 'clearData']);
     });
+
+    // Force upgrade permissions
+    Route::get('/upgrade-permissions', function (Request $request, ShopifyService $shopifyService) {
+        $shop = $request->input('shopify_shop');
+
+        // Tạo auth URL với scopes mới
+        $authUrl = $shopifyService->getAuthUrl($shop);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Redirect to upgrade permissions',
+            'auth_url' => $authUrl
+        ]);
+    });
 });
 
 // Routes cần xác thực token Shopify (online mode - per-user)

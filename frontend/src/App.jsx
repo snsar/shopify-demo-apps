@@ -121,6 +121,31 @@ function App() {
     }
   }
 
+  async function upgradePermissions() {
+    try {
+      const response = await fetch('/api/upgrade-permissions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Shop-Domain': shopDomain,
+          'Authorization': `Bearer ${shopify?.idToken || ''}`
+        }
+      })
+
+      const result = await response.json()
+
+      if (result.success && result.auth_url) {
+        // Redirect to Shopify auth URL to upgrade permissions
+        window.top.location.href = result.auth_url
+      } else {
+        throw new Error(result.message || 'Failed to get auth URL')
+      }
+    } catch (err) {
+      setError(`Lỗi upgrade permissions: ${err.message}`)
+      shopify.toast.show('❌ Không thể upgrade permissions', { isError: true })
+    }
+  }
+
   return (
     <Page title="Shopify Data Sync">
       <Layout>
@@ -163,6 +188,14 @@ function App() {
                 tone="success"
               >
                 {(isImportingProducts || isImportingOrders) ? 'Đang đồng bộ...' : '🚀 Đồng bộ Tất cả'}
+              </Button>
+
+              <Button
+                onClick={upgradePermissions}
+                tone="critical"
+                outline
+              >
+                🔑 Upgrade Permissions
               </Button>
             </div>
 
@@ -259,6 +292,7 @@ function App() {
               <li><strong>Đồng bộ Products:</strong> Import tất cả products, variants và images từ Shopify</li>
               <li><strong>Đồng bộ Draft Orders:</strong> Import tất cả draft orders và line items từ Shopify</li>
               <li><strong>Đồng bộ Tất cả:</strong> Import cả products và draft orders cùng lúc</li>
+              <li><strong>Upgrade Permissions:</strong> Cập nhật quyền truy cập để đồng bộ draft orders</li>
             </ul>
             <br />
             <Text as="p" color="subdued">
