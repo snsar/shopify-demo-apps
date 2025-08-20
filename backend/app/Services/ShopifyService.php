@@ -48,7 +48,7 @@ class ShopifyService
         $accessToken = $session->access_token;
 
         try {
-            $url = "https://{$shop}/admin/api/2024-01/{$endpoint}";
+            $url = "https://{$shop}/admin/api/2025-07/{$endpoint}";
 
             $response = Http::withHeaders([
                 'X-Shopify-Access-Token' => $accessToken,

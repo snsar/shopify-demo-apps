@@ -40,7 +40,7 @@ class ShopifyGraphQLService
         $accessToken = $session->access_token;
 
         try {
-            $url = "https://{$shop}/admin/api/2024-01/graphql.json";
+            $url = "https://{$shop}/admin/api/2025-07/graphql.json";
 
             $payload = [
                 'query' => $query
