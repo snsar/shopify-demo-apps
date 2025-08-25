@@ -1,306 +1,561 @@
-import { useAppBridge } from '@shopify/app-bridge-react'
-import { Page, Layout, Card, Button, Text, Banner, ProgressBar, Spinner } from '@shopify/polaris'
-import { useState } from 'react'
+
+import { 
+  Page, 
+  Card, 
+  BlockStack,
+  InlineGrid,
+  Box,
+  Text,
+  RadioButton,
+  TextField,
+  Select,
+  RangeSlider,
+  ColorPicker,
+  Button,
+  Badge,
+  InlineStack,
+  ButtonGroup,
+  Popover
+} from '@shopify/polaris'
+import { 
+  TextAlignCenterIcon, 
+  TextAlignLeftIcon, 
+  TextAlignRightIcon 
+} from '@shopify/polaris-icons'
+import { useState, useCallback } from 'react'
+import quoteSnapLogo from './assets/logoquotesnap.png'
 
 function App() {
-  const shopify = useAppBridge()
-  const [isImportingProducts, setIsImportingProducts] = useState(false)
-  const [isImportingOrders, setIsImportingOrders] = useState(false)
-  const [importStats, setImportStats] = useState(null)
-  const [error, setError] = useState(null)
+  
+  // Quote button configuration states
+  const [displayRule, setDisplayRule] = useState('all')
+  const [position, setPosition] = useState('under-button')
+  const [buttonLabel, setButtonLabel] = useState('Request for quote')
+  const [alignment, setAlignment] = useState('center')
+  const [fontSize, setFontSize] = useState(15)
+  const [cornerRadius, setCornerRadius] = useState(15)
+  const [textColor, setTextColor] = useState({
+    hue: 0,
+    brightness: 1,
+    saturation: 0,
+  })
+  const [buttonColor, setButtonColor] = useState({
+    hue: 39,
+    brightness: 1,
+    saturation: 1,
+  })
+  const [isActive, setIsActive] = useState(true)
+  
+  // Popover states
+  const [textColorPopoverActive, setTextColorPopoverActive] = useState(false)
+  const [buttonColorPopoverActive, setButtonColorPopoverActive] = useState(false)
 
-  // Lấy shop domain từ Shopify context
-  const shopDomain = shopify?.config?.shop || 'unknown-shop'
 
-  async function syncProducts() {
-    setIsImportingProducts(true)
-    setError(null)
-    setImportStats(null)
 
-    try {
-      const response = await fetch('/api/import/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Shop-Domain': shopDomain,
-          'Authorization': `Bearer ${shopify?.idToken || ''}`
-        },
-        body: JSON.stringify({
-          shop: shopDomain,
-          clear: false
-        })
-      })
 
-      const result = await response.json()
 
-      if (result.success) {
-        setImportStats(result.data)
-        shopify.toast.show(`✅ Đồng bộ thành công ${result.data.total_products} products!`)
-      } else {
-        throw new Error(result.message || 'Import failed')
+  const positionOptions = [
+    { label: 'Under button "Add To Cart"', value: 'under-button' },
+    { label: 'Above button "Add To Cart"', value: 'above-button' },
+    { label: 'Replace button "Add To Cart"', value: 'replace-button' },
+  ]
+
+  // Helper function to convert HSB to hex
+  const hsbToHex = (hsb) => {
+    const { hue, saturation, brightness } = hsb
+
+    const h = hue / 360
+    const s = saturation
+    const v = brightness
+
+    const i = Math.floor(h * 6)
+    const f = h * 6 - i
+    const p = v * (1 - s)
+    const q = v * (1 - f * s)
+    const t = v * (1 - (1 - f) * s)
+
+    let r, g, b
+    switch (i % 6) {
+      case 0: r = v; g = t; b = p; break
+      case 1: r = q; g = v; b = p; break
+      case 2: r = p; g = v; b = t; break
+      case 3: r = p; g = q; b = v; break
+      case 4: r = t; g = p; b = v; break
+      case 5: r = v; g = p; b = q; break
+      default: r = 0; g = 0; b = 0
+    }
+
+    const toHex = (c) => {
+      const hex = Math.round(c * 255).toString(16)
+      return hex.length === 1 ? '0' + hex : hex
+    }
+
+    const result = `#${toHex(r)}${toHex(g)}${toHex(b)}`
+
+    return result
+  }
+
+  // Helper function to convert hex to HSB
+  const hexToHsb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255
+    const g = parseInt(hex.slice(3, 5), 16) / 255
+    const b = parseInt(hex.slice(5, 7), 16) / 255
+
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const diff = max - min
+
+    let hue = 0
+    if (diff !== 0) {
+      switch (max) {
+        case r:
+          hue = ((g - b) / diff) % 6
+          break
+        case g:
+          hue = (b - r) / diff + 2
+          break
+        case b:
+          hue = (r - g) / diff + 4
+          break
       }
-    } catch (err) {
-      setError(`Lỗi đồng bộ products: ${err.message}`)
-      shopify.toast.show('❌ Đồng bộ products thất bại', { isError: true })
-    } finally {
-      setIsImportingProducts(false)
+    }
+    hue = Math.round(hue * 60)
+    if (hue < 0) hue += 360
+
+    const saturation = max === 0 ? 0 : diff / max
+    const brightness = max
+
+    return {
+      hue,
+      saturation,
+      brightness
     }
   }
 
-  async function syncOrders() {
-    setIsImportingOrders(true)
-    setError(null)
-    setImportStats(null)
-
-    try {
-      const response = await fetch('/api/import/draft-orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Shop-Domain': shopDomain,
-          'Authorization': `Bearer ${shopify?.idToken || ''}`
-        },
-        body: JSON.stringify({
-          shop: shopDomain,
-          clear: false
-        })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setImportStats(result.data)
-        shopify.toast.show(`✅ Đồng bộ thành công ${result.data.total_draft_orders} draft orders!`)
-      } else {
-        throw new Error(result.message || 'Import failed')
-      }
-    } catch (err) {
-      setError(`Lỗi đồng bộ orders: ${err.message}`)
-      shopify.toast.show('❌ Đồng bộ orders thất bại', { isError: true })
-    } finally {
-      setIsImportingOrders(false)
+  // Handler functions
+  const handleDisplayRuleChange = useCallback((checked, id) => {
+    if (checked) {
+      setDisplayRule(id)
     }
-  }
+  }, [])
 
-  async function syncAll() {
-    setIsImportingProducts(true)
-    setIsImportingOrders(true)
-    setError(null)
-    setImportStats(null)
+  const handlePositionChange = useCallback((value) => setPosition(value), [])
+  const handleButtonLabelChange = useCallback((value) => setButtonLabel(value), [])
 
-    try {
-      const response = await fetch('/api/import/all', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Shop-Domain': shopDomain,
-          'Authorization': `Bearer ${shopify?.idToken || ''}`
-        },
-        body: JSON.stringify({
-          shop: shopDomain,
-          clear: false
-        })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setImportStats(result.data)
-        const totalProducts = result.data.products?.total_products || 0
-        const totalOrders = result.data.draft_orders?.total_draft_orders || 0
-        shopify.toast.show(`✅ Đồng bộ thành công ${totalProducts} products và ${totalOrders} draft orders!`)
-      } else {
-        throw new Error(result.message || 'Import failed')
-      }
-    } catch (err) {
-      setError(`Lỗi đồng bộ dữ liệu: ${err.message}`)
-      shopify.toast.show('❌ Đồng bộ dữ liệu thất bại', { isError: true })
-    } finally {
-      setIsImportingProducts(false)
-      setIsImportingOrders(false)
-    }
-  }
-
-  async function upgradePermissions() {
-    try {
-      const response = await fetch('/api/upgrade-permissions', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Shop-Domain': shopDomain,
-          'Authorization': `Bearer ${shopify?.idToken || ''}`
-        }
-      })
-
-      const result = await response.json()
-
-      if (result.success && result.auth_url) {
-        // Redirect to Shopify auth URL to upgrade permissions
-        window.top.location.href = result.auth_url
-      } else {
-        throw new Error(result.message || 'Failed to get auth URL')
-      }
-    } catch (err) {
-      setError(`Lỗi upgrade permissions: ${err.message}`)
-      shopify.toast.show('❌ Không thể upgrade permissions', { isError: true })
-    }
-  }
+  const handleFontSizeChange = useCallback((value) => setFontSize(value), [])
+  const handleCornerRadiusChange = useCallback((value) => setCornerRadius(value), [])
+  const handleTextColorChange = useCallback((color) => setTextColor(color), [])
+  const handleButtonColorChange = useCallback((color) => setButtonColor(color), [])
+  const handleActiveStatusChange = useCallback(() => setIsActive(prev => !prev), [])
 
   return (
-    <Page title="Shopify Data Sync">
-      <Layout>
-        <Layout.Section>
-          <Card sectioned>
-            <Text as="h2" variant="headingMd">
-              Đồng bộ dữ liệu Shopify 🔄
-            </Text>
-            <Text as="p" color="subdued">
-              Đồng bộ products và draft orders từ Shopify về database của bạn
-            </Text>
-            <br />
-
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              flexWrap: 'wrap',
-              alignItems: 'center'
-            }}>
-              <Button
-                primary
-                onClick={syncProducts}
-                loading={isImportingProducts}
-                disabled={isImportingOrders}
-              >
-                {isImportingProducts ? 'Đang đồng bộ...' : '📦 Đồng bộ Products'}
-              </Button>
-
-              <Button
-                onClick={syncOrders}
-                loading={isImportingOrders}
-                disabled={isImportingProducts}
-              >
-                {isImportingOrders ? 'Đang đồng bộ...' : '📋 Đồng bộ Draft Orders'}
-              </Button>
-
-              <Button
-                onClick={syncAll}
-                loading={isImportingProducts || isImportingOrders}
-                tone="success"
-              >
-                {(isImportingProducts || isImportingOrders) ? 'Đang đồng bộ...' : '🚀 Đồng bộ Tất cả'}
-              </Button>
-
-              <Button
-                onClick={upgradePermissions}
-                tone="critical"
-                outline
-              >
-                🔑 Upgrade Permissions
-              </Button>
-            </div>
-
-            {(isImportingProducts || isImportingOrders) && (
-              <div style={{ marginTop: '1rem' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginBottom: '1rem'
-                }}>
-                  <Spinner size="small" />
-                  <Text as="p">
-                    {isImportingProducts && isImportingOrders
-                      ? 'Đang đồng bộ tất cả dữ liệu...'
-                      : isImportingProducts
-                        ? 'Đang đồng bộ products...'
-                        : 'Đang đồng bộ draft orders...'}
-                  </Text>
-                </div>
-                <ProgressBar progress={50} />
-              </div>
-            )}
-          </Card>
-        </Layout.Section>
-
-        {error && (
-          <Layout.Section>
-            <Banner status="critical" title="Lỗi đồng bộ">
-              <Text as="p">{error}</Text>
-            </Banner>
-          </Layout.Section>
-        )}
-
-        {importStats && (
-          <Layout.Section>
-            <Card sectioned>
-              <Text as="h3" variant="headingMd">
-                📊 Kết quả đồng bộ
+    <Page
+    >
+      <InlineGrid columns={{ xs: 1, md: "2fr 1fr" }} gap="400">
+        <BlockStack gap="400">
+          <Card roundedAbove="sm">
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingSm" fontWeight="medium">
+                Display rule
               </Text>
-              <br />
-
-              {importStats.products && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <Text as="h4" variant="headingSm">Products:</Text>
-                  <ul style={{ marginLeft: '1rem', marginTop: '0.5rem' }}>
-                    <li>✅ {importStats.products.total_products} products</li>
-                    <li>🔧 {importStats.products.total_variants} variants</li>
-                    <li>🖼️ {importStats.products.total_images} images</li>
-                  </ul>
-                </div>
-              )}
-
-              {importStats.draft_orders && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <Text as="h4" variant="headingSm">Draft Orders:</Text>
-                  <ul style={{ marginLeft: '1rem', marginTop: '0.5rem' }}>
-                    <li>📋 {importStats.draft_orders.total_draft_orders} draft orders</li>
-                    <li>📝 {importStats.draft_orders.total_line_items} line items</li>
-                  </ul>
-                </div>
-              )}
-
-              {importStats.total_products && (
-                <div>
-                  <Text as="h4" variant="headingSm">Tổng hợp:</Text>
-                  <ul style={{ marginLeft: '1rem', marginTop: '0.5rem' }}>
-                    <li>📦 {importStats.total_products} products</li>
-                    <li>🔧 {importStats.total_variants} variants</li>
-                    <li>🖼️ {importStats.total_images} images</li>
-                  </ul>
-                </div>
-              )}
-
-              {importStats.total_draft_orders && (
-                <div>
-                  <ul style={{ marginLeft: '1rem', marginTop: '0.5rem' }}>
-                    <li>📋 {importStats.total_draft_orders} draft orders</li>
-                    <li>📝 {importStats.total_line_items} line items</li>
-                  </ul>
-                </div>
-              )}
-            </Card>
-          </Layout.Section>
-        )}
-
-        <Layout.Section>
-          <Card sectioned>
-            <Text as="h3" variant="headingMd">
-              💡 Hướng dẫn sử dụng
-            </Text>
-            <br />
-            <ul style={{ marginLeft: '1rem' }}>
-              <li><strong>Đồng bộ Products:</strong> Import tất cả products, variants và images từ Shopify</li>
-              <li><strong>Đồng bộ Draft Orders:</strong> Import tất cả draft orders và line items từ Shopify</li>
-              <li><strong>Đồng bộ Tất cả:</strong> Import cả products và draft orders cùng lúc</li>
-              <li><strong>Upgrade Permissions:</strong> Cập nhật quyền truy cập để đồng bộ draft orders</li>
-            </ul>
-            <br />
-            <Text as="p" color="subdued">
-              Shop hiện tại: <strong>{shopDomain}</strong>
-            </Text>
+              
+              <Box paddingBlockStart="200">
+                <Text as="p" variant="bodyMd" color="subdued">
+                  Position on product page
+                </Text>
+              </Box>
+              
+              <Select
+                options={positionOptions}
+                onChange={handlePositionChange}
+                value={position}
+              />
+              
+              <BlockStack gap="300">
+                <RadioButton
+                  label="All products"
+                  checked={displayRule === 'all'}
+                  id="all"
+                  name="displayRule"
+                  onChange={handleDisplayRuleChange}
+                />
+                <RadioButton
+                  label="Specific products"
+                  checked={displayRule === 'specific'}
+                  id="specific"
+                  name="displayRule"
+                  onChange={handleDisplayRuleChange}
+                />
+                <RadioButton
+                  label="Group products"
+                  checked={displayRule === 'group'}
+                  id="group"
+                  name="displayRule"
+                  onChange={handleDisplayRuleChange}
+                />
+              </BlockStack>
+            </BlockStack>
           </Card>
-        </Layout.Section>
-      </Layout>
+          <Card roundedAbove="sm">
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingSm" fontWeight="medium">
+                Style
+              </Text>
+              
+              <TextField
+                label="Button Label"
+                value={buttonLabel}
+                onChange={handleButtonLabelChange}
+                autoComplete="off"
+              />
+              
+              <Box>
+                <Text as="p" variant="bodyMd" fontWeight="medium">
+                  Alignment
+                </Text>
+                <Box paddingBlockStart="200">
+                  <ButtonGroup segmented>
+                    <Button
+                      pressed={alignment === 'flex-start'}
+                      onClick={() => setAlignment('flex-start')}
+                      icon={TextAlignLeftIcon}
+                    />
+                    <Button
+                      pressed={alignment === 'center'}
+                      onClick={() => setAlignment('center')}
+                      icon={TextAlignCenterIcon}
+                    />
+                    <Button
+                      pressed={alignment === 'flex-end'}
+                      onClick={() => setAlignment('flex-end')}
+                      icon={TextAlignRightIcon}
+                    />
+                  </ButtonGroup>
+                </Box>
+              </Box>
+              
+              <Box>
+                <Text as="p" variant="bodyMd" fontWeight="medium">
+                  Font size
+                </Text>
+                <Box paddingBlockStart="200">
+                  <InlineStack gap="200" blockAlign="center">
+                    <Box style={{ flex: 1 }}>
+                      <RangeSlider
+                        label=""
+                        value={fontSize}
+                        onChange={handleFontSizeChange}
+                        min={10}
+                        max={30}
+                      />
+                    </Box>
+                    <Box style={{ minWidth: '80px' }}>
+                      <TextField
+                        value={fontSize.toString()}
+                        onChange={(value) => {
+                          const num = parseInt(value) || 10
+                          if (num >= 10 && num <= 30) {
+                            setFontSize(num)
+                          }
+                        }}
+                        suffix="px"
+                        autoComplete="off"
+                      />
+                    </Box>
+                  </InlineStack>
+                </Box>
+              </Box>
+              
+              <Box>
+                <Text as="p" variant="bodyMd" fontWeight="medium">
+                  Corner radius
+                </Text>
+                <Box paddingBlockStart="200">
+                  <InlineStack gap="200" blockAlign="center">
+                    <Box style={{ flex: 1 }}>
+                      <RangeSlider
+                        label=""
+                        value={cornerRadius}
+                        onChange={handleCornerRadiusChange}
+                        min={0}
+                        max={50}
+                      />
+                    </Box>
+                    <Box style={{ minWidth: '80px' }}>
+                      <TextField
+                        value={cornerRadius.toString()}
+                        onChange={(value) => {
+                          const num = parseInt(value) || 0
+                          if (num >= 0 && num <= 50) {
+                            setCornerRadius(num)
+                          }
+                        }}
+                        suffix="px"
+                        autoComplete="off"
+                      />
+                    </Box>
+                  </InlineStack>
+                </Box>
+              </Box>
+              
+              <InlineGrid columns={2} gap="400">
+                <Box>
+                  <Text as="p" variant="bodyMd" fontWeight="medium">
+                    Text color
+                  </Text>
+                  <Box paddingBlockStart="200">
+                    <InlineStack gap="200" blockAlign="center">
+                      <Popover
+                        active={textColorPopoverActive}
+                        activator={
+                          <Button
+                            onClick={() => setTextColorPopoverActive(!textColorPopoverActive)}
+                            style={{
+                              backgroundColor: hsbToHex(textColor),
+                              width: '32px',
+                              height: '32px',
+                              minHeight: '32px',
+                              padding: 0,
+                              border: '1px solid #ccc'
+                            }}
+                          />
+                        }
+                        onClose={() => setTextColorPopoverActive(false)}
+                      >
+                        <Box padding="400">
+                          <ColorPicker
+                            onChange={handleTextColorChange}
+                            color={textColor}
+                          />
+                        </Box>
+                      </Popover>
+                      <TextField
+                        value={hsbToHex(textColor).slice(1)}
+                        onChange={(value) => {
+                          const hex = `#${value}`
+                          const hexRegex = /^#[0-9A-Fa-f]{6}$/
+                          if (hexRegex.exec(hex)) {
+                            setTextColor(hexToHsb(hex))
+                          }
+                        }}
+                        prefix="#"
+                        autoComplete="off"
+                      />
+                    </InlineStack>
+                  </Box>
+                </Box>
+                
+                <Box>
+                  <Text as="p" variant="bodyMd" fontWeight="medium">
+                    Button color
+                  </Text>
+                  <Box paddingBlockStart="200">
+                    <InlineStack gap="200" blockAlign="center">
+                      <Popover
+                        active={buttonColorPopoverActive}
+                        activator={
+                          <Button
+                            onClick={() => setButtonColorPopoverActive(!buttonColorPopoverActive)}
+                            style={{
+                              backgroundColor: hsbToHex(buttonColor),
+                              width: '32px',
+                              height: '32px',
+                              minHeight: '32px',
+                              padding: 0,
+                              border: '1px solid #ccc'
+                            }}
+                          />
+                        }
+                        onClose={() => setButtonColorPopoverActive(false)}
+                      >
+                        <Box padding="400">
+                          <ColorPicker
+                            onChange={handleButtonColorChange}
+                            color={buttonColor}
+                          />
+                        </Box>
+                      </Popover>
+                      <TextField
+                        value={hsbToHex(buttonColor).slice(1)}
+                        onChange={(value) => {
+                          const hex = `#${value}`
+                          const hexRegex = /^#[0-9A-Fa-f]{6}$/
+                          if (hexRegex.exec(hex)) {
+                            setButtonColor(hexToHsb(hex))
+                          }
+                        }}
+                        prefix="#"
+                        autoComplete="off"
+                      />
+                    </InlineStack>
+                  </Box>
+                </Box>
+              </InlineGrid>
+            </BlockStack>
+          </Card>
+        </BlockStack>
+        <BlockStack gap={{ xs: "400", md: "200" }}>
+          <Card roundedAbove="sm">
+            <BlockStack gap="400">
+              <InlineStack align="space-between" blockAlign="center">
+                <Text as="h2" variant="headingSm" fontWeight="medium">
+                  Active status
+                </Text>
+                <Badge tone={isActive ? 'success' : 'critical'}>
+                  {isActive ? 'On' : 'Off'}
+                </Badge>
+              </InlineStack>
+              
+              <Text as="p" variant="bodyMd" color="subdued">
+                Show a Request For Quote button on all pages via store front.
+              </Text>
+              
+              <Button
+                onClick={handleActiveStatusChange}
+                variant={isActive ? 'secondary' : 'primary'}
+              >
+                Turn {isActive ? 'off' : 'on'}
+              </Button>
+            </BlockStack>
+          </Card>
+          <Card roundedAbove="sm">
+            <BlockStack gap="400">
+              <Text as="h2" variant="headingSm" fontWeight="medium">Preview</Text>
+              
+              {/* Display Rule Info */}
+              <Box paddingBlockEnd="200">
+                <Text as="p" variant="bodyMd" color="subdued">
+                  {displayRule === 'all' && 'Showing on all products'}
+                  {displayRule === 'specific' && 'Showing on specific products only'}
+                  {displayRule === 'group' && 'Showing on product groups only'}
+                  {' • '}
+                  {position === 'under-button' && 'Under "Add to Cart"'}
+                  {position === 'above-button' && 'Above "Add to Cart"'}
+                  {position === 'replace-button' && 'Replaces "Add to Cart"'}
+                </Text>
+              </Box>
+              
+
+              
+              <Box 
+                background="bg-surface-secondary" 
+                padding="400" 
+                borderRadius="200"
+              >
+                <BlockStack gap="400" align="center">
+                  {/* Product Image */}
+                  <Box
+                    borderRadius="200"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <img 
+                      src={quoteSnapLogo} 
+                      alt="Quote Snap"
+                      style={{
+                        width: '120px',
+                        height: '120px',
+                        objectFit: 'contain',
+                        borderRadius: '8px'
+                      }}
+                    />
+                  </Box>
+                  
+                  {/* Product Title */}
+                  <Text as="h3" variant="headingMd" fontWeight="medium" alignment="center">
+                    Quote Snap
+                  </Text>
+                  
+                  {/* Buttons */}
+                  <Box style={{ width: '100%', minWidth: '200px' }}>
+                    <BlockStack gap="200" inlineAlign="stretch">
+                                        {/* Above Add to Cart */}
+                    {position === 'above-button' && (
+                      <Box style={{ display: 'flex', justifyContent: alignment }}>
+                        <div
+                          style={{
+                            backgroundColor: hsbToHex(buttonColor),
+                            color: hsbToHex(textColor),
+                            fontSize: `${fontSize}px`,
+                            borderRadius: `${cornerRadius}px`,
+                            padding: '12px 20px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            textAlign: 'center',
+                            minWidth: '120px',
+                          }}
+                        >
+                          {buttonLabel}
+                        </div>
+                      </Box>
+                    )}
+                    
+                    {/* Add to Cart (only show if not replaced) */}
+                    {position !== 'replace-button' && (
+                      <Button size="large" variant="secondary">
+                        Add to cart
+                      </Button>
+                    )}
+                    
+                    {/* Under Add to Cart */}
+                    {position === 'under-button' && (
+                      <Box style={{  : 'flex', justifyContent: alignment }}>
+                        <div
+                          style={{
+                            backgroundColor: hsbToHex(buttonColor),
+                            color: hsbToHex(textColor),
+                            fontSize: `${fontSize}px`,
+                            borderRadius: `${cornerRadius}px`,
+                            padding: '12px 20px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            textAlign: 'center',
+                            minWidth: '120px',
+                          }}
+                        >
+                          {buttonLabel}
+                        </div>
+                      </Box>
+                    )}
+                    
+                    {/* Replace Add to Cart */}
+                    {position === 'replace-button' && (
+                      <Box style={{ display: 'flex', justifyContent: alignment }}>
+                        <div
+                          style={{
+                            backgroundColor: hsbToHex(buttonColor),
+                            color: hsbToHex(textColor),
+                            fontSize: `${fontSize}px`,
+                            borderRadius: `${cornerRadius}px`,
+                            padding: '12px 20px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            textAlign: 'center',
+                            minWidth: '120px',
+                          }}
+                        >
+                          {buttonLabel}
+                        </div>
+                      </Box>
+                    )}
+                    
+                    <Button size="large" variant="tertiary">
+                      Buy it now
+                    </Button>
+                    </BlockStack>
+                  </Box>
+                </BlockStack>
+              </Box>
+            </BlockStack>
+          </Card>
+        </BlockStack>
+      </InlineGrid>
     </Page>
   )
 }
