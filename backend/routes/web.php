@@ -13,7 +13,7 @@ Route::fallback(function (Request $request) {
     if (Context::$IS_EMBEDDED_APP &&  $request->query("embedded", false) === "1") {
 
         if (env('APP_ENV') === 'production') {
-            return redirect('https://b2b.qoutesnap.local/frontend/');
+            return redirect('https://b2b.quotesnap.local/frontend/');
         } else {
             return redirect('https://b2b.quotesnap.local/frontend/');
         }
