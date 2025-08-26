@@ -65,7 +65,11 @@ class ShopifyGraphQLService
                         'shop' => $shop,
                         'errors' => $data['errors']
                     ]);
-                    return null;
+                    return [
+                        'success' => false,
+                        'message' => 'GraphQL errors: ' . json_encode($data['errors']),
+                        'errors' => $data['errors']
+                    ];
                 }
 
                 Log::info("[ShopifyGraphQLService] GraphQL query thành công", [
@@ -73,7 +77,10 @@ class ShopifyGraphQLService
                     'query_type' => $this->extractQueryType($query)
                 ]);
 
-                return $data;
+                return [
+                    'success' => true,
+                    'data' => $data['data'] ?? $data
+                ];
             }
 
             // Log lỗi API
@@ -83,13 +90,21 @@ class ShopifyGraphQLService
                 'response' => $response->body()
             ]);
 
-            return null;
+            return [
+                'success' => false,
+                'message' => 'GraphQL query failed',
+                'status' => $response->status(),
+                'response' => $response->body()
+            ];
         } catch (\Exception $e) {
             Log::error("[ShopifyGraphQLService] Exception trong GraphQL query", [
                 'shop' => $shop,
                 'error' => $e->getMessage()
             ]);
-            return null;
+            return [
+                'success' => false,
+                'message' => 'Exception: ' . $e->getMessage()
+            ];
         }
     }
 

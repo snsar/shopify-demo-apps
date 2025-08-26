@@ -18,6 +18,8 @@ use App\Services\ShopifyService;
 use App\Services\TokenValidationService;
 use App\Http\Controllers\ShopifyWebhookController;
 use App\Http\Controllers\ShopifyImportController;
+use App\Http\Controllers\ShopifyMetafieldController;
+use App\Http\Controllers\QuoteConfigurationController;
 use App\Models\Order;
 
 // Routes không cần xác thực
@@ -40,6 +42,14 @@ Route::get('/auth', function (Request $request) {
 });
 
 Route::get('/auth/callback', [AuthController::class, 'callback']);
+
+// Quote Configuration Routes (fast DB access - no middleware needed)
+Route::prefix('quote-config')->group(function () {
+    Route::get('/', [QuoteConfigurationController::class, 'getConfiguration']);
+    Route::post('/save', [QuoteConfigurationController::class, 'saveConfiguration']);
+    Route::post('/sync-to-shopify', [QuoteConfigurationController::class, 'syncToShopify']);
+    Route::post('/import-from-shopify', [QuoteConfigurationController::class, 'importFromShopify']);
+});
 
 // Routes cần xác thực token Shopify (offline mode - default)
 Route::middleware(['validate.shopify.token'])->group(function () {
@@ -189,6 +199,18 @@ Route::middleware(['validate.shopify.token'])->group(function () {
         Route::post('/all', [ShopifyImportController::class, 'importAll']);
         Route::get('/stats', [ShopifyImportController::class, 'getStats']);
         Route::delete('/clear', [ShopifyImportController::class, 'clearData']);
+    });
+
+    // Shopify Metafield Routes (không cần middleware validation - lấy token từ DB)
+    Route::prefix('shopify')->group(function () {
+        Route::post('/metafield', [ShopifyMetafieldController::class, 'createOrUpdateShopMetafield']);
+        Route::get('/metafields', [ShopifyMetafieldController::class, 'getShopMetafields']);
+    });
+
+    // Development/Test Routes (bypass token validation)
+    Route::prefix('dev')->group(function () {
+        Route::post('/shopify/metafield', [ShopifyMetafieldController::class, 'createOrUpdateShopMetafieldDev']);
+        Route::get('/shopify/metafields', [ShopifyMetafieldController::class, 'getShopMetafieldsDev']);
     });
 
     // Orders Routes - xem orders đã được lưu từ webhook

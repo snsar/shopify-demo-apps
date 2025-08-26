@@ -22,10 +22,26 @@ import {
   TextAlignLeftIcon,
   TextAlignRightIcon
 } from '@shopify/polaris-icons'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import quoteSnapLogo from './assets/logoquotesnap.png'
+import { useAppBridge } from '@shopify/app-bridge-react'
+import ApiService from './services/apiService'
 
 function App() {
+
+  const shopify = useAppBridge()
+
+  // Khởi tạo API service
+  const apiService = useMemo(() => new ApiService(shopify), [shopify])
+
+  // States cho import functionality
+  const [isImportingProducts, setIsImportingProducts] = useState(false)
+  const [importStats, setImportStats] = useState(null)
+  const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+
 
   // Quote button configuration states
   const [displayRule, setDisplayRule] = useState('all')
@@ -148,8 +164,86 @@ function App() {
   const handleButtonColorChange = useCallback((color) => setButtonColor(color), [])
   const handleActiveStatusChange = useCallback(() => setIsActive(prev => !prev), [])
 
+  // Load configuration from metafield on component mount
+  useEffect(() => {
+    const loadConfiguration = async () => {
+      try {
+        setIsLoading(true)
+        const config = await apiService.getQuoteConfiguration()
+
+        if (config) {
+          setDisplayRule(config.displayRule || 'all')
+          setPosition(config.position || 'under-button')
+          setButtonLabel(config.buttonLabel || 'Request for quote')
+          setAlignment(config.alignment || 'center')
+          setFontSize(config.fontSize || 15)
+          setCornerRadius(config.cornerRadius || 15)
+          setTextColor(config.textColor || { hue: 0, brightness: 1, saturation: 0 })
+          setButtonColor(config.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
+          setIsActive(config.isActive !== undefined ? config.isActive : true)
+        }
+      } catch (error) {
+        console.error('Error loading configuration:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (apiService) {
+      loadConfiguration()
+    }
+  }, [apiService])
+
+  // Save configuration to metafield
+  const saveConfiguration = useCallback(async () => {
+    if (isSaving) return
+
+    try {
+      setIsSaving(true)
+      const config = {
+        displayRule,
+        position,
+        buttonLabel,
+        alignment,
+        fontSize,
+        cornerRadius,
+        textColor,
+        buttonColor,
+        isActive
+      }
+
+      await apiService.saveQuoteConfiguration(config)
+    } catch (error) {
+      console.error('Error saving configuration:', error)
+      setError('Lỗi lưu cấu hình: ' + error.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [apiService, displayRule, position, buttonLabel, alignment, fontSize, cornerRadius, textColor, buttonColor, isActive, isSaving])
+
+  // Removed auto-save to prevent lag - only manual save now
+
+  const handleUpdateOrCreateShopMetafield = async (data) => {
+    const response = await apiService.createOrUpdateShopMetafield(data)
+    console.log(response)
+  }
+
+  if (isLoading) {
+    return (
+      <Page>
+        <Card>
+          <Box padding="400" textAlign="center">
+            <Text as="p" variant="bodyMd">Đang tải cấu hình...</Text>
+          </Box>
+        </Card>
+      </Page>
+    )
+  }
+
   return (
     <Page
+      title="Quote Snap Configuration"
+      subtitle={isSaving ? "Đang lưu..." : "Nhấn 'Lưu cấu hình' để áp dụng thay đổi"}
     >
       <InlineGrid columns={{ xs: 1, md: "2fr 1fr" }} gap="400">
         <BlockStack gap="400">
@@ -183,13 +277,6 @@ function App() {
                   label="Specific products"
                   checked={displayRule === 'specific'}
                   id="specific"
-                  name="displayRule"
-                  onChange={handleDisplayRuleChange}
-                />
-                <RadioButton
-                  label="Group products"
-                  checked={displayRule === 'group'}
-                  id="group"
                   name="displayRule"
                   onChange={handleDisplayRuleChange}
                 />
@@ -416,6 +503,63 @@ function App() {
               >
                 Turn {isActive ? 'off' : 'on'}
               </Button>
+
+              {/* Manual save button */}
+              <Button
+                onClick={saveConfiguration}
+                loading={isSaving}
+                variant="primary"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Đang lưu...' : 'Lưu cấu hình'}
+              </Button>
+
+              {/* Sync to Shopify button */}
+              <Button
+                onClick={async () => {
+                  try {
+                    await apiService.syncConfigToShopify()
+                  } catch (error) {
+                    setError('Lỗi đồng bộ: ' + error.message)
+                  }
+                }}
+                variant="tertiary"
+              >
+                Đồng bộ lên Shopify
+              </Button>
+
+              {/* Import from Shopify button */}
+              <Button
+                onClick={async () => {
+                  try {
+                    const importedConfig = await apiService.importConfigFromShopify()
+                    // Update UI with imported config
+                    setDisplayRule(importedConfig.displayRule || 'all')
+                    setPosition(importedConfig.position || 'under-button')
+                    setButtonLabel(importedConfig.buttonLabel || 'Request for quote')
+                    setAlignment(importedConfig.alignment || 'center')
+                    setFontSize(importedConfig.fontSize || 15)
+                    setCornerRadius(importedConfig.cornerRadius || 15)
+                    setTextColor(importedConfig.textColor || { hue: 0, brightness: 1, saturation: 0 })
+                    setButtonColor(importedConfig.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
+                    setIsActive(importedConfig.isActive !== undefined ? importedConfig.isActive : true)
+                  } catch (error) {
+                    setError('Lỗi import: ' + error.message)
+                  }
+                }}
+                variant="tertiary"
+              >
+                Import từ Shopify
+              </Button>
+
+              {/* Show error if any */}
+              {error && (
+                <Box paddingBlockStart="200">
+                  <Text as="p" variant="bodyMd" color="critical">
+                    {error}
+                  </Text>
+                </Box>
+              )}
             </BlockStack>
           </Card>
           <Card roundedAbove="sm">
