@@ -15,6 +15,7 @@ class QuoteConfiguration extends Model
         'position',
         'type',
         'is_active',
+        'specific_products',
         'style_config',
         'additional_config',
         'synced_at'
@@ -23,6 +24,7 @@ class QuoteConfiguration extends Model
     protected $casts = [
         'style_config' => 'array',
         'additional_config' => 'array',
+        'specific_products' => 'array',
         'is_active' => 'boolean',
         'type' => 'integer',
         'synced_at' => 'datetime'
@@ -50,6 +52,7 @@ class QuoteConfiguration extends Model
                 'position' => $config['position'] ?? 'under-button',
                 'type' => $displayRule === 'all' ? 1 : 2,
                 'is_active' => $config['isActive'] ?? true,
+                'specific_products' => $config['specificProducts'] ?? null,
                 'style_config' => [
                     'buttonLabel' => $config['buttonLabel'] ?? 'Request for quote',
                     'alignment' => $config['alignment'] ?? 'center',
@@ -73,6 +76,7 @@ class QuoteConfiguration extends Model
             'displayRule' => $this->display_rule,
             'position' => $this->position,
             'isActive' => $this->is_active,
+            'specificProducts' => $this->specific_products ?? [],
             'buttonLabel' => $this->style_config['buttonLabel'] ?? 'Request for quote',
             'alignment' => $this->style_config['alignment'] ?? 'center',
             'fontSize' => $this->style_config['fontSize'] ?? 15,
@@ -90,6 +94,7 @@ class QuoteConfiguration extends Model
         return [
             'displayRule' => $this->display_rule,
             'position' => $this->position,
+            'specificProducts' => $this->specific_products ?? [],
             'buttonLabel' => $this->style_config['buttonLabel'] ?? 'Request for quote',
             'alignment' => $this->style_config['alignment'] ?? 'center',
             'fontSize' => $this->style_config['fontSize'] ?? 15,

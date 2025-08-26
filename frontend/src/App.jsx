@@ -40,6 +40,7 @@ function App() {
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [specificProducts, setSpecificProducts] = useState([])
 
 
 
@@ -181,6 +182,7 @@ function App() {
           setTextColor(config.textColor || { hue: 0, brightness: 1, saturation: 0 })
           setButtonColor(config.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
           setIsActive(config.isActive !== undefined ? config.isActive : true)
+          setSpecificProducts(config.specificProducts || [])
         }
       } catch (error) {
         console.error('Error loading configuration:', error)
@@ -209,7 +211,8 @@ function App() {
         cornerRadius,
         textColor,
         buttonColor,
-        isActive
+        isActive,
+        specificProducts
       }
 
       await apiService.saveQuoteConfiguration(config)
@@ -219,13 +222,37 @@ function App() {
     } finally {
       setIsSaving(false)
     }
-  }, [apiService, displayRule, position, buttonLabel, alignment, fontSize, cornerRadius, textColor, buttonColor, isActive, isSaving])
+  }, [apiService, displayRule, position, buttonLabel, alignment, fontSize, cornerRadius, textColor, buttonColor, isActive, specificProducts, isSaving])
 
   // Removed auto-save to prevent lag - only manual save now
 
   const handleUpdateOrCreateShopMetafield = async (data) => {
     const response = await apiService.createOrUpdateShopMetafield(data)
     console.log(response)
+  }
+
+  // Resource picker for specific products
+  const handleSelectProducts = async () => {
+    try {
+      const selected = await shopify.resourcePicker({
+        type: 'product',
+        multiple: true,
+        action: 'select',
+        selectionIds: specificProducts.map(p => p.id)
+      })
+
+      if (selected) {
+        setSpecificProducts(selected)
+      }
+    } catch (error) {
+      console.error('Error selecting products:', error)
+      setError('Lỗi chọn sản phẩm: ' + error.message)
+    }
+  }
+
+  // Remove specific product
+  const handleRemoveProduct = (productId) => {
+    setSpecificProducts(prev => prev.filter(p => p.id !== productId))
   }
 
   if (isLoading) {
@@ -280,6 +307,73 @@ function App() {
                   name="displayRule"
                   onChange={handleDisplayRuleChange}
                 />
+
+                {/* Specific Products Selection */}
+                {displayRule === 'specific' && (
+                  <Box paddingBlockStart="300">
+                    <BlockStack gap="300">
+                      <Button
+                        onClick={handleSelectProducts}
+                        variant="secondary"
+                        fullWidth
+                      >
+                        {specificProducts.length > 0
+                          ? `Selected ${specificProducts.length} product(s)`
+                          : 'Select Products'
+                        }
+                      </Button>
+
+                      {/* Display selected products */}
+                      {specificProducts.length > 0 && (
+                        <Box>
+                          <Text as="p" variant="bodyMd" fontWeight="medium">
+                            Selected Products:
+                          </Text>
+                          <Box paddingBlockStart="200">
+                            <BlockStack gap="200">
+                              {specificProducts.map((product) => (
+                                <InlineStack key={product.id} align="space-between" blockAlign="center">
+                                  <InlineStack gap="300" blockAlign="center">
+                                    {product.images?.[0] && (
+                                      <Box style={{ width: '40px', height: '40px' }}>
+                                        <img
+                                          src={product.images[0].originalSrc || product.images[0].url}
+                                          alt={product.title}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            borderRadius: '4px'
+                                          }}
+                                        />
+                                      </Box>
+                                    )}
+                                    <BlockStack gap="050">
+                                      <Text as="p" variant="bodyMd" fontWeight="medium">
+                                        {product.title}
+                                      </Text>
+                                      <Text as="p" variant="bodySm" color="subdued">
+                                        {product.handle}
+                                      </Text>
+                                    </BlockStack>
+                                  </InlineStack>
+                                  <Button
+                                    onClick={() => handleRemoveProduct(product.id)}
+                                    variant="tertiary"
+                                    size="micro"
+                                    destructive
+                                  >
+                                    Remove
+                                  </Button>
+                                </InlineStack>
+                              ))}
+                            </BlockStack>
+                          </Box>
+                        </Box>
+                      )}
+                    </BlockStack>
+                  </Box>
+                )}
               </BlockStack>
             </BlockStack>
           </Card>
@@ -543,6 +637,7 @@ function App() {
                     setTextColor(importedConfig.textColor || { hue: 0, brightness: 1, saturation: 0 })
                     setButtonColor(importedConfig.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
                     setIsActive(importedConfig.isActive !== undefined ? importedConfig.isActive : true)
+                    setSpecificProducts(importedConfig.specificProducts || [])
                   } catch (error) {
                     setError('Lỗi import: ' + error.message)
                   }
@@ -570,7 +665,7 @@ function App() {
               <Box paddingBlockEnd="200">
                 <Text as="p" variant="bodyMd" color="subdued">
                   {displayRule === 'all' && 'Showing on all products'}
-                  {displayRule === 'specific' && 'Showing on specific products only'}
+                  {displayRule === 'specific' && `Showing on ${specificProducts.length} specific product(s)`}
                   {displayRule === 'group' && 'Showing on product groups only'}
                   {' • '}
                   {position === 'under-button' && 'Under "Add to Cart"'}

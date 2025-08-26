@@ -43,7 +43,6 @@ Route::get('/auth', function (Request $request) {
 
 Route::get('/auth/callback', [AuthController::class, 'callback']);
 
-// Quote Configuration Routes (fast DB access - no middleware needed)
 Route::prefix('quote-config')->group(function () {
     Route::get('/', [QuoteConfigurationController::class, 'getConfiguration']);
     Route::post('/save', [QuoteConfigurationController::class, 'saveConfiguration']);
