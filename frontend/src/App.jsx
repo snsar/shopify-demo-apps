@@ -1,7 +1,7 @@
 
-import { 
-  Page, 
-  Card, 
+import {
+  Page,
+  Card,
   BlockStack,
   InlineGrid,
   Box,
@@ -17,16 +17,16 @@ import {
   ButtonGroup,
   Popover
 } from '@shopify/polaris'
-import { 
-  TextAlignCenterIcon, 
-  TextAlignLeftIcon, 
-  TextAlignRightIcon 
+import {
+  TextAlignCenterIcon,
+  TextAlignLeftIcon,
+  TextAlignRightIcon
 } from '@shopify/polaris-icons'
 import { useState, useCallback } from 'react'
 import quoteSnapLogo from './assets/logoquotesnap.png'
 
 function App() {
-  
+
   // Quote button configuration states
   const [displayRule, setDisplayRule] = useState('all')
   const [position, setPosition] = useState('under-button')
@@ -45,7 +45,7 @@ function App() {
     saturation: 1,
   })
   const [isActive, setIsActive] = useState(true)
-  
+
   // Popover states
   const [textColorPopoverActive, setTextColorPopoverActive] = useState(false)
   const [buttonColorPopoverActive, setButtonColorPopoverActive] = useState(false)
@@ -158,19 +158,19 @@ function App() {
               <Text as="h2" variant="headingSm" fontWeight="medium">
                 Display rule
               </Text>
-              
+
               <Box paddingBlockStart="200">
                 <Text as="p" variant="bodyMd" color="subdued">
                   Position on product page
                 </Text>
               </Box>
-              
+
               <Select
                 options={positionOptions}
                 onChange={handlePositionChange}
                 value={position}
               />
-              
+
               <BlockStack gap="300">
                 <RadioButton
                   label="All products"
@@ -201,14 +201,14 @@ function App() {
               <Text as="h2" variant="headingSm" fontWeight="medium">
                 Style
               </Text>
-              
+
               <TextField
                 label="Button Label"
                 value={buttonLabel}
                 onChange={handleButtonLabelChange}
                 autoComplete="off"
               />
-              
+
               <Box>
                 <Text as="p" variant="bodyMd" fontWeight="medium">
                   Alignment
@@ -233,7 +233,7 @@ function App() {
                   </ButtonGroup>
                 </Box>
               </Box>
-              
+
               <Box>
                 <Text as="p" variant="bodyMd" fontWeight="medium">
                   Font size
@@ -265,7 +265,7 @@ function App() {
                   </InlineStack>
                 </Box>
               </Box>
-              
+
               <Box>
                 <Text as="p" variant="bodyMd" fontWeight="medium">
                   Corner radius
@@ -297,7 +297,7 @@ function App() {
                   </InlineStack>
                 </Box>
               </Box>
-              
+
               <InlineGrid columns={2} gap="400">
                 <Box>
                   <Text as="p" variant="bodyMd" fontWeight="medium">
@@ -344,7 +344,7 @@ function App() {
                     </InlineStack>
                   </Box>
                 </Box>
-                
+
                 <Box>
                   <Text as="p" variant="bodyMd" fontWeight="medium">
                     Button color
@@ -405,11 +405,11 @@ function App() {
                   {isActive ? 'On' : 'Off'}
                 </Badge>
               </InlineStack>
-              
+
               <Text as="p" variant="bodyMd" color="subdued">
                 Show a Request For Quote button on all pages via store front.
               </Text>
-              
+
               <Button
                 onClick={handleActiveStatusChange}
                 variant={isActive ? 'secondary' : 'primary'}
@@ -421,7 +421,7 @@ function App() {
           <Card roundedAbove="sm">
             <BlockStack gap="400">
               <Text as="h2" variant="headingSm" fontWeight="medium">Preview</Text>
-              
+
               {/* Display Rule Info */}
               <Box paddingBlockEnd="200">
                 <Text as="p" variant="bodyMd" color="subdued">
@@ -434,12 +434,12 @@ function App() {
                   {position === 'replace-button' && 'Replaces "Add to Cart"'}
                 </Text>
               </Box>
-              
 
-              
-              <Box 
-                background="bg-surface-secondary" 
-                padding="400" 
+
+
+              <Box
+                background="bg-surface-secondary"
+                padding="400"
                 borderRadius="200"
               >
                 <BlockStack gap="400" align="center">
@@ -452,8 +452,8 @@ function App() {
                       justifyContent: 'center',
                     }}
                   >
-                    <img 
-                      src={quoteSnapLogo} 
+                    <img
+                      src={quoteSnapLogo}
                       alt="Quote Snap"
                       style={{
                         width: '120px',
@@ -463,91 +463,91 @@ function App() {
                       }}
                     />
                   </Box>
-                  
+
                   {/* Product Title */}
                   <Text as="h3" variant="headingMd" fontWeight="medium" alignment="center">
                     Quote Snap
                   </Text>
-                  
+
                   {/* Buttons */}
                   <Box style={{ width: '100%', minWidth: '200px' }}>
                     <BlockStack gap="200" inlineAlign="stretch">
-                                        {/* Above Add to Cart */}
-                    {position === 'above-button' && (
-                      <Box style={{ display: 'flex', justifyContent: alignment }}>
-                        <div
-                          style={{
-                            backgroundColor: hsbToHex(buttonColor),
-                            color: hsbToHex(textColor),
-                            fontSize: `${fontSize}px`,
-                            borderRadius: `${cornerRadius}px`,
-                            padding: '12px 20px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            textAlign: 'center',
-                            minWidth: '120px',
-                          }}
-                        >
-                          {buttonLabel}
-                        </div>
-                      </Box>
-                    )}
-                    
-                    {/* Add to Cart (only show if not replaced) */}
-                    {position !== 'replace-button' && (
-                      <Button size="large" variant="secondary">
-                        Add to cart
+                      {/* Above Add to Cart */}
+                      {position === 'above-button' && (
+                        <Box style={{ display: 'flex', justifyContent: alignment }}>
+                          <div
+                            style={{
+                              backgroundColor: hsbToHex(buttonColor),
+                              color: hsbToHex(textColor),
+                              fontSize: `${fontSize}px`,
+                              borderRadius: `${cornerRadius}px`,
+                              padding: '12px 20px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              textAlign: 'center',
+                              minWidth: '120px',
+                            }}
+                          >
+                            {buttonLabel}
+                          </div>
+                        </Box>
+                      )}
+
+                      {/* Add to Cart (only show if not replaced) */}
+                      {position !== 'replace-button' && (
+                        <Button size="large" variant="secondary">
+                          Add to cart
+                        </Button>
+                      )}
+
+                      {/* Under Add to Cart */}
+                      {position === 'under-button' && (
+                        <Box style={{ display: 'flex', justifyContent: alignment }}>
+                          <div
+                            style={{
+                              backgroundColor: hsbToHex(buttonColor),
+                              color: hsbToHex(textColor),
+                              fontSize: `${fontSize}px`,
+                              borderRadius: `${cornerRadius}px`,
+                              padding: '12px 20px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              textAlign: 'center',
+                              minWidth: '120px',
+                            }}
+                          >
+                            {buttonLabel}
+                          </div>
+                        </Box>
+                      )}
+
+                      {/* Replace Add to Cart */}
+                      {position === 'replace-button' && (
+                        <Box style={{ display: 'flex', justifyContent: alignment }}>
+                          <div
+                            style={{
+                              backgroundColor: hsbToHex(buttonColor),
+                              color: hsbToHex(textColor),
+                              fontSize: `${fontSize}px`,
+                              borderRadius: `${cornerRadius}px`,
+                              padding: '12px 20px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              textAlign: 'center',
+                              minWidth: '120px',
+                            }}
+                          >
+                            {buttonLabel}
+                          </div>
+                        </Box>
+                      )}
+
+                      <Button size="large" variant="tertiary">
+                        Buy it now
                       </Button>
-                    )}
-                    
-                    {/* Under Add to Cart */}
-                    {position === 'under-button' && (
-                      <Box style={{  : 'flex', justifyContent: alignment }}>
-                        <div
-                          style={{
-                            backgroundColor: hsbToHex(buttonColor),
-                            color: hsbToHex(textColor),
-                            fontSize: `${fontSize}px`,
-                            borderRadius: `${cornerRadius}px`,
-                            padding: '12px 20px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            textAlign: 'center',
-                            minWidth: '120px',
-                          }}
-                        >
-                          {buttonLabel}
-                        </div>
-                      </Box>
-                    )}
-                    
-                    {/* Replace Add to Cart */}
-                    {position === 'replace-button' && (
-                      <Box style={{ display: 'flex', justifyContent: alignment }}>
-                        <div
-                          style={{
-                            backgroundColor: hsbToHex(buttonColor),
-                            color: hsbToHex(textColor),
-                            fontSize: `${fontSize}px`,
-                            borderRadius: `${cornerRadius}px`,
-                            padding: '12px 20px',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            textAlign: 'center',
-                            minWidth: '120px',
-                          }}
-                        >
-                          {buttonLabel}
-                        </div>
-                      </Box>
-                    )}
-                    
-                    <Button size="large" variant="tertiary">
-                      Buy it now
-                    </Button>
                     </BlockStack>
                   </Box>
                 </BlockStack>
