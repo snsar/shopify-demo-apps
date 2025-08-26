@@ -102,6 +102,11 @@ class QuoteConfigurationController extends Controller
                 ], 401);
             }
 
+            // Nếu displayRule là 'all', đảm bảo specificProducts là rỗng
+            if (isset($validatedData['displayRule']) && $validatedData['displayRule'] === 'all') {
+                $validatedData['specificProducts'] = [];
+            }
+
             // Save to database
             $config = QuoteConfiguration::updateOrCreateForShop($shop, $validatedData);
 

@@ -153,6 +153,10 @@ function App() {
   const handleDisplayRuleChange = useCallback((checked, id) => {
     if (checked) {
       setDisplayRule(id)
+      // Nếu chọn 'all', reset specificProducts về mảng rỗng
+      if (id === 'all') {
+        setSpecificProducts([])
+      }
     }
   }, [])
 

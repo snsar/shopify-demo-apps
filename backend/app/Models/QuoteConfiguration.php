@@ -45,6 +45,12 @@ class QuoteConfiguration extends Model
     {
         $displayRule = $config['displayRule'] ?? 'all';
 
+        // Nếu displayRule là 'all', đảm bảo specificProducts là null hoặc mảng rỗng
+        $specificProducts = $config['specificProducts'] ?? null;
+        if ($displayRule === 'all') {
+            $specificProducts = null;
+        }
+
         return static::updateOrCreate(
             ['shop' => $shop],
             [
@@ -52,7 +58,7 @@ class QuoteConfiguration extends Model
                 'position' => $config['position'] ?? 'under-button',
                 'type' => $displayRule === 'all' ? 1 : 2,
                 'is_active' => $config['isActive'] ?? true,
-                'specific_products' => $config['specificProducts'] ?? null,
+                'specific_products' => $specificProducts,
                 'style_config' => [
                     'buttonLabel' => $config['buttonLabel'] ?? 'Request for quote',
                     'alignment' => $config['alignment'] ?? 'center',
