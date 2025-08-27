@@ -52,9 +52,9 @@ function App() {
   const [fontSize, setFontSize] = useState(15)
   const [cornerRadius, setCornerRadius] = useState(15)
   const [textColor, setTextColor] = useState({
-    hue: 0,
+    hue: 240,
     brightness: 1,
-    saturation: 0,
+    saturation: 1,
   })
   const [buttonColor, setButtonColor] = useState({
     hue: 39,
@@ -79,11 +79,16 @@ function App() {
 
   // Helper function to convert HSB to hex
   const hsbToHex = (hsb) => {
-    const { hue, saturation, brightness } = hsb
+    if (!hsb || typeof hsb !== 'object') {
+      return '#ffffff' // fallback to white
+    }
 
-    const h = hue / 360
-    const s = saturation
-    const v = brightness
+    const { hue = 0, saturation = 0, brightness = 1 } = hsb
+
+    // Normalize values
+    const h = Math.max(0, Math.min(360, hue)) / 360
+    const s = Math.max(0, Math.min(1, saturation))
+    const v = Math.max(0, Math.min(1, brightness))
 
     const i = Math.floor(h * 6)
     const f = h * 6 - i
@@ -103,17 +108,23 @@ function App() {
     }
 
     const toHex = (c) => {
-      const hex = Math.round(c * 255).toString(16)
+      const hex = Math.round(Math.max(0, Math.min(255, c * 255))).toString(16)
       return hex.length === 1 ? '0' + hex : hex
     }
 
     const result = `#${toHex(r)}${toHex(g)}${toHex(b)}`
+    console.log('HSB to Hex:', { input: hsb, result })
 
     return result
   }
 
   // Helper function to convert hex to HSB
   const hexToHsb = (hex) => {
+    if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || hex.length !== 7) {
+      console.log('Invalid hex input:', hex)
+      return { hue: 0, saturation: 0, brightness: 0 }
+    }
+
     const r = parseInt(hex.slice(1, 3), 16) / 255
     const g = parseInt(hex.slice(3, 5), 16) / 255
     const b = parseInt(hex.slice(5, 7), 16) / 255
@@ -142,10 +153,23 @@ function App() {
     const saturation = max === 0 ? 0 : diff / max
     const brightness = max
 
+    const result = {
+      hue: Math.max(0, Math.min(360, hue)),
+      saturation: Math.max(0, Math.min(1, saturation)),
+      brightness: Math.max(0, Math.min(1, brightness))
+    }
+
+    console.log('Hex to HSB:', { input: hex, result })
+    return result
+  }
+
+  // Helper function để chuẩn hóa màu cho ColorPicker
+  const normalizeColorForPicker = (color) => {
+    // Đảm bảo các giá trị trong khoảng đúng cho Polaris ColorPicker
     return {
-      hue,
-      saturation,
-      brightness
+      hue: Math.max(0, Math.min(360, color.hue || 0)),
+      saturation: Math.max(0, Math.min(1, color.saturation || 0)),
+      brightness: Math.max(0, Math.min(1, color.brightness || 1))
     }
   }
 
@@ -183,8 +207,12 @@ function App() {
           setAlignment(config.alignment || 'center')
           setFontSize(config.fontSize || 15)
           setCornerRadius(config.cornerRadius || 15)
-          setTextColor(config.textColor || { hue: 0, brightness: 1, saturation: 0 })
-          setButtonColor(config.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
+
+          const normalizedTextColor = normalizeColorForPicker(config.textColor || { hue: 240, brightness: 1, saturation: 1 })
+          const normalizedButtonColor = normalizeColorForPicker(config.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
+
+          setTextColor(normalizedTextColor)
+          setButtonColor(normalizedButtonColor)
           setIsActive(config.isActive !== undefined ? config.isActive : true)
           setSpecificProducts(config.specificProducts || [])
         }
@@ -493,24 +521,31 @@ function App() {
                       <Popover
                         active={textColorPopoverActive}
                         activator={
-                          <Button
+                          <div
                             onClick={() => setTextColorPopoverActive(!textColorPopoverActive)}
                             style={{
                               backgroundColor: hsbToHex(textColor),
                               width: '32px',
                               height: '32px',
-                              minHeight: '32px',
-                              padding: 0,
-                              border: '1px solid #ccc'
+                              border: '2px solid #000',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '8px',
+                              color: 'white',
+                              textShadow: '1px 1px 1px black'
                             }}
-                          />
+                          >
+                          </div>
                         }
                         onClose={() => setTextColorPopoverActive(false)}
                       >
                         <Box padding="400">
                           <ColorPicker
                             onChange={handleTextColorChange}
-                            color={textColor}
+                            color={normalizeColorForPicker(textColor)}
                           />
                         </Box>
                       </Popover>
@@ -519,8 +554,11 @@ function App() {
                         onChange={(value) => {
                           const hex = `#${value}`
                           const hexRegex = /^#[0-9A-Fa-f]{6}$/
-                          if (hexRegex.exec(hex)) {
-                            setTextColor(hexToHsb(hex))
+                          console.log('Text field onChange:', { value, hex, isValid: hexRegex.test(hex) })
+                          if (hexRegex.test(hex)) {
+                            const hsbColor = hexToHsb(hex)
+                            console.log('Setting text color to:', hsbColor)
+                            setTextColor(hsbColor)
                           }
                         }}
                         prefix="#"
@@ -539,24 +577,31 @@ function App() {
                       <Popover
                         active={buttonColorPopoverActive}
                         activator={
-                          <Button
+                          <div
                             onClick={() => setButtonColorPopoverActive(!buttonColorPopoverActive)}
                             style={{
                               backgroundColor: hsbToHex(buttonColor),
                               width: '32px',
                               height: '32px',
-                              minHeight: '32px',
-                              padding: 0,
-                              border: '1px solid #ccc'
+                              border: '2px solid #000',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '8px',
+                              color: 'white',
+                              textShadow: '1px 1px 1px black'
                             }}
-                          />
+                          >
+                          </div>
                         }
                         onClose={() => setButtonColorPopoverActive(false)}
                       >
                         <Box padding="400">
                           <ColorPicker
                             onChange={handleButtonColorChange}
-                            color={buttonColor}
+                            color={normalizeColorForPicker(buttonColor)}
                           />
                         </Box>
                       </Popover>
@@ -565,8 +610,11 @@ function App() {
                         onChange={(value) => {
                           const hex = `#${value}`
                           const hexRegex = /^#[0-9A-Fa-f]{6}$/
-                          if (hexRegex.exec(hex)) {
-                            setButtonColor(hexToHsb(hex))
+                          console.log('Button field onChange:', { value, hex, isValid: hexRegex.test(hex) })
+                          if (hexRegex.test(hex)) {
+                            const hsbColor = hexToHsb(hex)
+                            console.log('Setting button color to:', hsbColor)
+                            setButtonColor(hsbColor)
                           }
                         }}
                         prefix="#"
@@ -638,8 +686,8 @@ function App() {
                     setAlignment(importedConfig.alignment || 'center')
                     setFontSize(importedConfig.fontSize || 15)
                     setCornerRadius(importedConfig.cornerRadius || 15)
-                    setTextColor(importedConfig.textColor || { hue: 0, brightness: 1, saturation: 0 })
-                    setButtonColor(importedConfig.buttonColor || { hue: 39, brightness: 1, saturation: 1 })
+                    setTextColor(normalizeColorForPicker(importedConfig.textColor || { hue: 240, brightness: 1, saturation: 1 }))
+                    setButtonColor(normalizeColorForPicker(importedConfig.buttonColor || { hue: 39, brightness: 1, saturation: 1 }))
                     setIsActive(importedConfig.isActive !== undefined ? importedConfig.isActive : true)
                     setSpecificProducts(importedConfig.specificProducts || [])
                   } catch (error) {
