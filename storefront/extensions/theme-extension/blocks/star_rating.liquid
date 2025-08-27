@@ -64,6 +64,15 @@ document.addEventListener('DOMContentLoaded', function() {
   
   console.log('Quote button is active, proceeding...');
   console.log('Final config being used:', quoteConfig);
+  console.log('Config details:');
+  console.log('- displayRule:', quoteConfig.displayRule);
+  console.log('- buttonLabel:', quoteConfig.buttonLabel);
+  console.log('- alignment:', quoteConfig.alignment);
+  console.log('- fontSize:', quoteConfig.fontSize);
+  console.log('- cornerRadius:', quoteConfig.cornerRadius);
+  console.log('- textColor:', quoteConfig.textColor);
+  console.log('- buttonColor:', quoteConfig.buttonColor);
+  console.log('- isActive:', quoteConfig.isActive);
   
   // Kiểm tra displayRule specific
   if (quoteConfig.displayRule === 'specific' && quoteConfig.specificProducts) {
@@ -115,7 +124,17 @@ document.addEventListener('DOMContentLoaded', function() {
             padding: 12px 24px;
             cursor: pointer;
             font-weight: 600;
+            min-width: 200px;
+            width: 100%;
+            max-width: 400px;
+            display: inline-block;
+            text-align: center;
+            line-height: 1.4;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
           "
+          onmouseover="this.style.opacity='0.8'; this.style.transform='translateY(-1px)'" 
+          onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'"
           onclick="alert('Quote request for this product!')"
         >
           Request Quote
@@ -155,26 +174,65 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Tính màu
+  console.log('Processing colors...');
+  console.log('Raw buttonColor from config:', quoteConfig.buttonColor);
+  console.log('Raw textColor from config:', quoteConfig.textColor);
+  
+  const buttonColorHsb = {
+    hue: quoteConfig.buttonColor?.hue ?? 40,
+    saturation: quoteConfig.buttonColor?.saturation ?? 1,
+    brightness: quoteConfig.buttonColor?.brightness ?? 1
+  };
+  
+  const textColorHsb = {
+    hue: quoteConfig.textColor?.hue ?? 0,
+    saturation: quoteConfig.textColor?.saturation ?? 0,
+    brightness: quoteConfig.textColor?.brightness ?? 1
+  };
+  
+  console.log('Processed buttonColor HSB:', buttonColorHsb);
+  console.log('Processed textColor HSB:', textColorHsb);
+  
   const buttonColor = hsbToRgb(
-    quoteConfig.buttonColor.hue || 40,
-    quoteConfig.buttonColor.saturation || 1,
-    quoteConfig.buttonColor.brightness || 1
+    buttonColorHsb.hue,
+    buttonColorHsb.saturation,
+    buttonColorHsb.brightness
   );
   
   const textColor = hsbToRgb(
-    quoteConfig.textColor.hue || 0,
-    quoteConfig.textColor.saturation || 0,
-    quoteConfig.textColor.brightness || 1
+    textColorHsb.hue,
+    textColorHsb.saturation,
+    textColorHsb.brightness
   );
   
-  // Chuyển đổi alignment từ flex-end thành text-align
-  let textAlign = quoteConfig.alignment;
-  if (textAlign === 'flex-end') textAlign = 'right';
-  if (textAlign === 'flex-start') textAlign = 'left';
+  console.log('Final buttonColor RGB:', buttonColor);
+  console.log('Final textColor RGB:', textColor);
   
-  // Tạo quote button HTML
+  // Chuyển đổi alignment từ flex values sang CSS
+  console.log('Processing alignment...');
+  console.log('Raw alignment from config:', quoteConfig.alignment);
+  
+  let containerStyle = '';
+  let buttonStyle = '';
+  
+  if (quoteConfig.alignment === 'flex-end' || quoteConfig.alignment === 'right') {
+    containerStyle = 'text-align: right;';
+    console.log('Applied alignment: right');
+  } else if (quoteConfig.alignment === 'flex-start' || quoteConfig.alignment === 'left') {
+    containerStyle = 'text-align: left;';
+    console.log('Applied alignment: left');
+  } else {
+    containerStyle = 'text-align: center;';
+    console.log('Applied alignment: center');
+  }
+  
+  console.log('Font size from config:', quoteConfig.fontSize);
+  console.log('Corner radius from config:', quoteConfig.cornerRadius);
+  console.log('Button label from config:', quoteConfig.buttonLabel);
+  
+  // Tạo quote button HTML với styling giống nút "Request for quote"
   const quoteButtonHtml = `
-    <div class="quote-button-container" style="text-align: ${textAlign}; margin: 15px 0;">
+    <div class="quote-button-container" style="${containerStyle} margin: 15px 0;">
       <button 
         class="quote-request-button" 
         style="
@@ -186,11 +244,18 @@ document.addEventListener('DOMContentLoaded', function() {
           padding: 12px 24px;
           cursor: pointer;
           font-weight: 600;
-          transition: opacity 0.3s ease;
-          min-width: 150px;
+          transition: all 0.3s ease;
+          min-width: 200px;
+          width: 100%;
+          max-width: 400px;
+          display: inline-block;
+          text-align: center;
+          text-decoration: none;
+          line-height: 1.4;
+          box-sizing: border-box;
         "
-        onmouseover="this.style.opacity='0.8'" 
-        onmouseout="this.style.opacity='1'"
+        onmouseover="this.style.opacity='0.8'; this.style.transform='translateY(-1px)'" 
+        onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'"
         onclick="handleQuoteRequest()"
       >
         ${quoteConfig.buttonLabel || 'Request Quote'}
@@ -222,15 +287,32 @@ document.addEventListener('DOMContentLoaded', function() {
   
   if (addToCartButton) {
     console.log('Found Add to Cart button, inserting quote button');
+    
+    // Tìm container chứa Add to Cart button để chèn nút ở cùng level
+    let insertTarget = addToCartButton.parentNode;
+    
+    // Nếu Add to Cart nằm trong form, chèn sau form
+    const parentForm = addToCartButton.closest('form[action*="/cart/add"]');
+    if (parentForm) {
+      insertTarget = parentForm;
+    }
+    
     if (quoteConfig.position === 'replace-button') {
       addToCartButton.style.display = 'none';
+      insertTarget.insertAdjacentHTML('afterend', quoteButtonHtml);
+    } else if (quoteConfig.position === 'above-button') {
+      insertTarget.insertAdjacentHTML('beforebegin', quoteButtonHtml);
+    } else { // under-button (default)
+      insertTarget.insertAdjacentHTML('afterend', quoteButtonHtml);
     }
-    addToCartButton.parentNode.insertAdjacentHTML('afterend', quoteButtonHtml);
   } else {
     console.log('Add to Cart not found, trying product form');
-    const productForm = document.querySelector('form[action*="/cart/add"], .product-form');
+    const productForm = document.querySelector('form[action*="/cart/add"], .product-form, .product');
     if (productForm) {
       productForm.insertAdjacentHTML('beforeend', quoteButtonHtml);
+    } else {
+      // Cuối cùng, chèn vào cuối body nếu không tìm thấy gì
+      document.body.insertAdjacentHTML('beforeend', quoteButtonHtml);
     }
   }
   
