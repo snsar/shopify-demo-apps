@@ -65,6 +65,41 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Quote button is active, proceeding...');
   console.log('Final config being used:', quoteConfig);
   
+  // Kiểm tra displayRule specific
+  if (quoteConfig.displayRule === 'specific' && quoteConfig.specificProducts) {
+    const currentProductId = {{ product.id | json }};
+    const currentProductGid = `gid://shopify/Product/${currentProductId}`;
+    const currentProductHandle = {{ product.handle | json }};
+    
+    console.log('Checking specific products rule...');
+    console.log('Current product ID:', currentProductId);
+    console.log('Current product GID:', currentProductGid);
+    console.log('Current product handle:', currentProductHandle);
+    console.log('Specific products list:', quoteConfig.specificProducts);
+    
+    // Kiểm tra xem sản phẩm hiện tại có trong danh sách không
+    const isProductAllowed = quoteConfig.specificProducts.some(product => {
+      // So sánh theo GID
+      if (product.id === currentProductGid) return true;
+      // So sánh theo ID number
+      if (product.id === currentProductId || product.id === currentProductId.toString()) return true;
+      // So sánh theo handle
+      if (product.handle === currentProductHandle) return true;
+      // Nếu product chỉ là ID (number)
+      if (product === currentProductId || product === currentProductId.toString()) return true;
+      return false;
+    });
+    
+    console.log('Is product allowed:', isProductAllowed);
+    
+    if (!isProductAllowed) {
+      console.log('Current product not in specific products list, skipping quote button');
+      return;
+    }
+    
+    console.log('Product is in specific list, showing quote button');
+  }
+  
   // Fallback: Nếu vẫn có vấn đề với config, tạo nút đơn giản
   if (!quoteConfig || typeof quoteConfig !== 'object') {
     console.log('Creating simple fallback button');
@@ -132,9 +167,14 @@ document.addEventListener('DOMContentLoaded', function() {
     quoteConfig.textColor.brightness || 1
   );
   
+  // Chuyển đổi alignment từ flex-end thành text-align
+  let textAlign = quoteConfig.alignment;
+  if (textAlign === 'flex-end') textAlign = 'right';
+  if (textAlign === 'flex-start') textAlign = 'left';
+  
   // Tạo quote button HTML
   const quoteButtonHtml = `
-    <div class="quote-button-container" style="text-align: ${quoteConfig.alignment}; margin: 15px 0;">
+    <div class="quote-button-container" style="text-align: ${textAlign}; margin: 15px 0;">
       <button 
         class="quote-request-button" 
         style="
