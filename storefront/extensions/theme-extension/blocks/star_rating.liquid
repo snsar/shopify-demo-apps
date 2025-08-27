@@ -23,38 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (e) {
       console.error('Error parsing shop metafield:', e);
     }
-  {% elsif product.metafields.quote_snap.configuration %}
-    try {
-      const metafieldValue = {{ product.metafields.quote_snap.configuration.value | json }};
-      console.log('Raw product metafield value:', metafieldValue);
-      quoteConfig = typeof metafieldValue === 'string' ? JSON.parse(metafieldValue) : metafieldValue;
-      console.log('Parsed product metafield:', quoteConfig);
-    } catch (e) {
-      console.error('Error parsing product metafield:', e);
-    }
   {% else %}
     console.log('No metafield found');
   {% endif %}
   
-  // Nếu không có config, dùng config mặc định từ settings
-  if (!quoteConfig) {
-    console.log('No metafield, using default config');
-    quoteConfig = {
-      displayRule: "all",
-      position: "under-button", 
-      buttonLabel: "{{ block.settings.button_text | default: 'Request Quote' }}",
-      alignment: "{{ block.settings.alignment | default: 'center' }}",
-      fontSize: {{ block.settings.font_size | default: 16 }},
-      cornerRadius: {{ block.settings.corner_radius | default: 8 }},
-      textColor: { hue: 0, brightness: 1, saturation: 0 },
-      buttonColor: { 
-        hue: {{ block.settings.button_hue | default: 40 }}, 
-        brightness: 1, 
-        saturation: 1 
-      },
-      isActive: {{ block.settings.is_active | default: true }}
-    };
-  }
   
   // Kiểm tra nếu không active (chỉ khi có metafield)
   if (quoteConfig && quoteConfig.hasOwnProperty('isActive') && !quoteConfig.isActive) {
@@ -78,24 +50,17 @@ document.addEventListener('DOMContentLoaded', function() {
   if (quoteConfig.displayRule === 'specific' && quoteConfig.specificProducts) {
     const currentProductId = {{ product.id | json }};
     const currentProductGid = `gid://shopify/Product/${currentProductId}`;
-    const currentProductHandle = {{ product.handle | json }};
     
     console.log('Checking specific products rule...');
     console.log('Current product ID:', currentProductId);
     console.log('Current product GID:', currentProductGid);
-    console.log('Current product handle:', currentProductHandle);
     console.log('Specific products list:', quoteConfig.specificProducts);
     
     // Kiểm tra xem sản phẩm hiện tại có trong danh sách không
     const isProductAllowed = quoteConfig.specificProducts.some(product => {
       // So sánh theo GID
       if (product.id === currentProductGid) return true;
-      // So sánh theo ID number
-      if (product.id === currentProductId || product.id === currentProductId.toString()) return true;
-      // So sánh theo handle
-      if (product.handle === currentProductHandle) return true;
-      // Nếu product chỉ là ID (number)
-      if (product === currentProductId || product === currentProductId.toString()) return true;
+
       return false;
     });
     
@@ -109,47 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Product is in specific list, showing quote button');
   }
   
-  // Fallback: Nếu vẫn có vấn đề với config, tạo nút đơn giản
-  if (!quoteConfig || typeof quoteConfig !== 'object') {
-    console.log('Creating simple fallback button');
-    const simpleButtonHtml = `
-      <div style="text-align: center; margin: 15px 0;">
-        <button 
-          style="
-            background-color: #ff6600;
-            color: white;
-            font-size: 16px;
-            border-radius: 8px;
-            border: none;
-            padding: 12px 24px;
-            cursor: pointer;
-            font-weight: 600;
-            min-width: 200px;
-            width: 100%;
-            max-width: 400px;
-            display: inline-block;
-            text-align: center;
-            line-height: 1.4;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
-          "
-          onmouseover="this.style.opacity='0.8'; this.style.transform='translateY(-1px)'" 
-          onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'"
-          onclick="alert('Quote request for this product!')"
-        >
-          Request Quote
-        </button>
-      </div>
-    `;
-    
-    const addToCartButton = document.querySelector('button[name="add"], [data-testid="add-to-cart"], .btn-product-add, form[action*="/cart/add"] button[type="submit"]');
-    if (addToCartButton) {
-      addToCartButton.parentNode.insertAdjacentHTML('afterend', simpleButtonHtml);
-    } else {
-      document.body.insertAdjacentHTML('beforeend', simpleButtonHtml);
-    }
-    return;
-  }
+  
   
   // Chuyển HSB sang RGB
   function hsbToRgb(h, s, b) {
@@ -230,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Corner radius from config:', quoteConfig.cornerRadius);
   console.log('Button label from config:', quoteConfig.buttonLabel);
   
-  // Tạo quote button HTML với styling giống nút "Request for quote"
   const quoteButtonHtml = `
     <div class="quote-button-container" style="${containerStyle} margin: 15px 0;">
       <button 
@@ -324,66 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {
   "name": "Quote Button",
   "target": "head",
-  "templates": ["product"],
-  "settings": [
-    {
-      "type": "checkbox",
-      "id": "is_active",
-      "label": "Enable Quote Button",
-      "default": true
-    },
-    {
-      "type": "text",
-      "id": "button_text",
-      "label": "Button Text",
-      "default": "Request Quote"
-    },
-    {
-      "type": "select",
-      "id": "alignment",
-      "label": "Button Alignment",
-      "options": [
-        { "value": "left", "label": "Left" },
-        { "value": "center", "label": "Center" },
-        { "value": "right", "label": "Right" }
-      ],
-      "default": "center"
-    },
-    {
-      "type": "range",
-      "id": "font_size",
-      "label": "Font Size",
-      "min": 12,
-      "max": 24,
-      "step": 1,
-      "default": 16,
-      "unit": "px"
-    },
-    {
-      "type": "range",
-      "id": "corner_radius",
-      "label": "Corner Radius",
-      "min": 0,
-      "max": 20,
-      "step": 1,
-      "default": 8,
-      "unit": "px"
-    },
-    {
-      "type": "range",
-      "id": "button_hue",
-      "label": "Button Color (Hue)",
-      "min": 0,
-      "max": 360,
-      "step": 4,
-      "default": 40,
-      "info": "Orange = 40, Blue = 240, Green = 120, Red = 0"
-    },
-    {
-      "type": "paragraph",
-      "content": "This button uses metafield 'quote_snap.configuration' if available, otherwise uses the settings above."
-    }
-  ]
+  "templates": ["product"]
 }
 {% endschema %}
 
