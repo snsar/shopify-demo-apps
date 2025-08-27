@@ -5,6 +5,9 @@
     },
     "home": {
       "recommendationText": "Recommended Product!"
+    },
+    "replace_cart": {
+      "message": "This product has excellent reviews! Contact us for purchase."
     }
   }
 }

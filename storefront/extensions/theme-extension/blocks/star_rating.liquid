@@ -1,20 +1,60 @@
-{% assign avg_rating = block.settings.product.metafields.demo.avg_rating.value | round %}
-<span style="color:{{ block.settings.colour }}">
-  {% render 'stars', rating: avg_rating %}
-</span>
-{% if avg_rating >= 4 %}
-  <br>
-  <img src="{{ "thumbs-up.png" | asset_img_url: '15x' }}" height="15" width="15" loading="lazy">
-  {{ 'ratings.home.recommendationText' | t }}
-{% endif %}
+{% comment %} Target head - tự động inject vào trang product {% endcomment %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Chỉ chạy trên trang product
+  if (!window.location.pathname.includes('/products/')) return;
+  
+  const starColor = '{{ block.settings.colour | default: "#ff0000" }}';
+  const avgRating = {{ block.settings.rating | default: 5 }};
+  
+  // Tạo star rating HTML
+  let starsHtml = '';
+  for (let i = 1; i <= 5; i++) {
+    if (i <= avgRating) {
+      starsHtml += `<span style="color: ${starColor};">★</span>`;
+    } else {
+      starsHtml += `<span style="color: #ddd;">★</span>`;
+    }
+  }
+  
+  let starRatingHtml = `
+    <div class="star-rating-extension" style="margin: 15px 0;">
+      <div style="color: ${starColor};">
+        ${starsHtml}
+        ${avgRating >= 4 ? `
+          <br>
+          <img src="{{ "thumbs-up.png" | asset_img_url: '15x' }}" height="15" width="15" loading="lazy">
+          {{ 'ratings.home.recommendationText' | t }}
+        ` : ''}
+      </div>
+    </div>
+  `;
+  
+  // Tìm nút Add to Cart và chèn sau nó
+  const addToCartButton = document.querySelector('button[name="add"], [data-testid="add-to-cart"], .btn-product-add, form[action*="/cart/add"] button[type="submit"]');
+  
+  if (addToCartButton) {
+    addToCartButton.parentNode.insertAdjacentHTML('afterend', starRatingHtml);
+  }
+});
+</script>
 
 {% schema %}
 {
   "name": "Star Rating",
-  "target": "section",
+  "target": "head",
+  "templates": ["product"],
   "settings": [
-    { "type": "product", "id": "product", "label": "product", "autofill": true },
-    { "type": "color", "id": "colour", "label": "Star Colour", "default": "#ff0000" }
+    { "type": "color", "id": "colour", "label": "Star Colour", "default": "#ff0000" },
+    {
+      "type": "range",
+      "id": "rating",
+      "label": "Star Rating",
+      "min": 1,
+      "max": 5,
+      "step": 1,
+      "default": 5
+    }
   ]
 }
 {% endschema %}
