@@ -9,5 +9,14 @@
     "replace_cart": {
       "message": "This product has excellent reviews! Contact us for purchase."
     }
+  },
+  "quote": {
+    "button": {
+      "label": "Request Quote"
+    },
+    "request": {
+      "success": "Quote request submitted! We will contact you soon.",
+      "error": "Failed to submit quote request. Please try again."
+    }
   }
 }
